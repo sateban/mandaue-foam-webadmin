@@ -1,4 +1,4 @@
-﻿/* filebase.js — Filebase (S3-compatible) upload/delete using SubtleCrypto SigV4 */
+/* filebase.js — Filebase (S3-compatible) upload/delete using SubtleCrypto SigV4 */
 const FilebaseService = (() => {
   const enc = new TextEncoder();
 
@@ -68,6 +68,43 @@ const FilebaseService = (() => {
   }
 
   function publicUrl(key) { return bucketUrl(key); }
+
+  async function getPresignedUrl(key) {
+    const { apiKey, apiSecret, bucketName, region } = CONFIG.filebase;
+    if (!key) return '';
+    const now = new Date();
+    const amzDate = isoDate(now);
+    const dateStamp = shortDate(now);
+    const host = `${bucketName}.s3.filebase.com`;
+    const service = 's3';
+    const scope = `${dateStamp}/${region}/${service}/aws4_request`;
+    const expires = '3600';
+    
+    const encodedKey = encodeURIComponent(key).replace(/%2F/g, '/');
+    const cred = encodeURIComponent(`${apiKey}/${scope}`);
+    
+    const queryParams = [
+      `X-Amz-Algorithm=AWS4-HMAC-SHA256`,
+      `X-Amz-Credential=${cred}`,
+      `X-Amz-Date=${amzDate}`,
+      `X-Amz-Expires=${expires}`,
+      `X-Amz-SignedHeaders=host`
+    ];
+    const canonicalQueryString = queryParams.join('&');
+    const canonicalHeaders = `host:${host}\n`;
+    const signedHeadersList = 'host';
+    const payloadHash = 'UNSIGNED-PAYLOAD';
+    
+    const canonicalRequest = ['GET', '/' + encodedKey, canonicalQueryString, canonicalHeaders, signedHeadersList, payloadHash].join('\n');
+    const strToSign = ['AWS4-HMAC-SHA256', amzDate, scope, await sha256hex(canonicalRequest)].join('\n');
+    let signingKey = await hmac('AWS4' + apiSecret, dateStamp);
+    signingKey = await hmac(signingKey, region);
+    signingKey = await hmac(signingKey, service);
+    signingKey = await hmac(signingKey, 'aws4_request');
+    const sigHex = Array.from(await hmac(signingKey, strToSign)).map(b => b.toString(16).padStart(2,'0')).join('');
+      
+    return `https://${host}/${encodedKey}?${canonicalQueryString}&X-Amz-Signature=${sigHex}`;
+  }
 
   async function uploadFile(file, folder) {
     const safeFolder = folder.replace(/\/+$/, '');
@@ -142,5 +179,5 @@ const FilebaseService = (() => {
     }));
   }
 
-  return { uploadFile, deleteFile, listFiles, publicUrl };
+  return { uploadFile, deleteFile, listFiles, publicUrl, getPresignedUrl };
 })();

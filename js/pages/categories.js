@@ -1,6 +1,7 @@
 /* categories.js */
 window.Categories = (() => {
   let unsub = null;
+  let currentImgPreview = null; // Holds the File object when selecting a new image
 
   function mount(container) {
     container.innerHTML = `
@@ -20,11 +21,11 @@ window.Categories = (() => {
     unsub = FirebaseService.stream('categories', renderList);
   }
 
-  function renderList(val) {
+  async function renderList(val) {
     const grid = document.getElementById('cat-grid');
     if (!grid) return;
     
-    if (!val) {
+    if (!val || (Array.isArray(val) && val.filter(c => c !== null).length === 0) || Object.keys(val).length === 0) {
       grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">
         <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
         <h4>No categories</h4>
@@ -33,67 +34,181 @@ window.Categories = (() => {
       return;
     }
 
-    const items = Object.entries(val).map(([id, data]) => ({ id, ...data }));
-    grid.innerHTML = items.map(c => `
-      <div class="cat-card" onclick="window.Categories.editCategory('${c.id}', '${c.name.replace(/'/g,"\\'")}')">
+    let items = [];
+    if (Array.isArray(val)) {
+      items = val.filter(c => c !== null); 
+    } else {
+      items = Object.entries(val).map(([k, data]) => ({ id: data.id || k, ...data }));
+    }
+
+    const htmlPromises = items.map(async c => {
+      const safeName = (c.name || '').replace(/'/g, "\\'");
+      const safeDesc = (c.description || '').replace(/'/g, "\\'");
+      const safeImg  = (c.imageUrl || '').replace(/'/g, "\\'");
+      const safeId = (c.id || '').replace(/'/g, "\\'");
+      
+      let imgHtml = `
         <div class="cat-icon">
-           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
         </div>
-        <h4>${c.name}</h4>
-      </div>
-    `).join('');
+      `;
+      if (c.imageUrl) {
+        const url = await FilebaseService.getPresignedUrl(c.imageUrl);
+        imgHtml = `
+          <div style="width: 48px; height: 48px; margin: 0 auto 10px; border-radius: var(--r); overflow: hidden; background: var(--bg);">
+            <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src=''; this.onerror=null; this.parentElement.innerHTML='<svg style=\\'margin-top:12px;color:var(--muted)\\' width=\\'24\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg>';" />
+          </div>
+        `;
+      }
+
+      return `
+        <div class="cat-card" onclick="window.Categories.editCategory('${safeId}', '${safeName}', '${safeDesc}', '${safeImg}')">
+          ${imgHtml}
+          <h4>${c.name}</h4>
+          ${c.description ? `<span>${c.description}</span>` : ''}
+        </div>
+      `;
+    });
+
+    const renderedHTML = await Promise.all(htmlPromises);
+    grid.innerHTML = renderedHTML.join('');
   }
 
-  function addCategory() {
-    Modal.open({
-      title: 'Add Category',
-      body: `
-        <div class="form-group mb-4">
-          <label class="form-label">Category Name</label>
-          <input type="text" id="cat-name-input" class="input" placeholder="e.g. Sofa, Bed, Table..." />
+  function getFormHtml(id, name, desc, imgUrl, presignedUrl) {
+    let previewHtml = `
+      <div class="product-img-add w-full" style="height:120px" id="cat-img-drop" onclick="document.getElementById('cat-img-upload').click()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        <span>Upload Category Icon</span>
+      </div>
+    `;
+
+    if (presignedUrl) {
+      previewHtml = `
+        <div class="product-img-add w-full" style="height:120px; padding:0; overflow:hidden;" id="cat-img-drop" onclick="document.getElementById('cat-img-upload').click()">
+          <img src="${presignedUrl}" style="width:100%; height:100%; object-fit:cover;" />
         </div>
-      `,
-      footer: `
-        <button class="btn btn-outline" onclick="Modal.close()">Cancel</button>
-        <button class="btn btn-primary" onclick="window.Categories.saveCategory()">Save Category</button>
-      `
+      `;
+    }
+
+    return `
+      <input type="hidden" id="cat-id-input" value="${id || ''}" />
+      <input type="hidden" id="cat-oldimg-input" value="${imgUrl || ''}" />
+      
+      <div class="form-group mb-4">
+        <label class="form-label">Category Icon (Image)</label>
+        ${previewHtml}
+        <input type="file" id="cat-img-upload" accept="image/*" class="hidden" />
+      </div>
+
+      <div class="form-group mb-4">
+        <label class="form-label">Category Name</label>
+        <input type="text" id="cat-name-input" class="input" value="${name || ''}" placeholder="e.g. Sofa, Bed, Table..." />
+      </div>
+      
+      <div class="form-group mb-4">
+        <label class="form-label">Description</label>
+        <textarea id="cat-desc-input" class="textarea" placeholder="Brief description...">${desc || ''}</textarea>
+      </div>
+    `;
+  }
+
+  function attachUploadListener() {
+    const input = document.getElementById('cat-img-upload');
+    const drop  = document.getElementById('cat-img-drop');
+    if (!input || !drop) return;
+    
+    input.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      currentImgPreview = file;
+      const url = URL.createObjectURL(file);
+      drop.style.padding = '0';
+      drop.style.overflow = 'hidden';
+      drop.innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:cover;" />`;
     });
   }
 
-  function editCategory(id, name) {
+  function addCategory() {
+    currentImgPreview = null;
+    Modal.open({
+      title: 'Add Category',
+      body: getFormHtml('', '', '', '', ''),
+      footer: `
+        <button class="btn btn-outline" onclick="Modal.close()">Cancel</button>
+        <button class="btn btn-primary" id="cat-save-btn" onclick="window.Categories.saveCategory()">Save Category</button>
+      `,
+      onOpen: attachUploadListener
+    });
+  }
+
+  async function editCategory(id, name, desc, imgUrl) {
+    currentImgPreview = null;
+    let presigned = '';
+    if (imgUrl) {
+      presigned = await FilebaseService.getPresignedUrl(imgUrl);
+    }
+
     Modal.open({
       title: 'Edit Category',
       body: `
-        <input type="hidden" id="cat-id-input" value="${id}" />
-        <div class="form-group mb-4">
-          <label class="form-label">Category Name</label>
-          <input type="text" id="cat-name-input" class="input" value="${name}" />
-        </div>
+        ${getFormHtml(id, name, desc, imgUrl, presigned)}
         <div style="text-align:right">
            <button class="btn btn-ghost text-danger" onclick="window.Categories.deleteCategory('${id}')">Delete Category</button>
         </div>
       `,
       footer: `
         <button class="btn btn-outline" onclick="Modal.close()">Cancel</button>
-        <button class="btn btn-primary" onclick="window.Categories.saveCategory()">Save Changes</button>
-      `
+        <button class="btn btn-primary" id="cat-save-btn" onclick="window.Categories.saveCategory()">Save Changes</button>
+      `,
+      onOpen: attachUploadListener
     });
   }
 
-  function saveCategory() {
-    const input = document.getElementById('cat-name-input');
+  async function saveCategory() {
+    const nameInput = document.getElementById('cat-name-input');
+    const descInput = document.getElementById('cat-desc-input');
     const idEl = document.getElementById('cat-id-input');
-    const name = input.value.trim();
-    if (!name) { input.focus(); return; }
+    const oldImgEl = document.getElementById('cat-oldimg-input');
+    const btn = document.getElementById('cat-save-btn');
 
-    const id = idEl ? idEl.value : FirebaseService.newKey('categories');
-    
-    FirebaseService.update(`categories/${id}`, { name })
-      .then(() => {
-        Toast.success('Category saved');
-        Modal.close();
-      })
-      .catch(e => Toast.error(e.message));
+    const name = nameInput.value.trim();
+    const description = descInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = 'Saving...';
+
+    try {
+      // Use existing ID or generate one
+      const id = (idEl && idEl.value) ? idEl.value : FirebaseService.newKey('categories');
+      
+      let imageUrl = oldImgEl ? oldImgEl.value : '';
+
+      // Upload new image if selected
+      if (currentImgPreview) {
+        btn.textContent = 'Uploading Icon...';
+        const uploadRes = await FilebaseService.uploadFile(currentImgPreview, 'image-assets/categories');
+        imageUrl = uploadRes.key;
+      }
+
+      const payload = { id, name, description };
+      if (imageUrl) payload.imageUrl = imageUrl;
+
+      btn.textContent = 'Updating Database...';
+      
+      // Because the user data struct shown was an Array ("categories": [...]), we could use update on index if it's an array, 
+      // but Firebase update handles dictionary structure perfectly under /categories/{id}.
+      // To strictly support the array format shown if that's what's used, we rely on Firebase's logic mapping.
+      await FirebaseService.update(`categories/${id}`, payload);
+      
+      Toast.success('Category saved successfully');
+      Modal.close();
+    } catch(err) {
+      Toast.error(err.message);
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   }
 
   function deleteCategory(id) {
