@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AR Admin — Mandaue Foam</title>
+  <meta name="description" content="Web administration panel for the Mandaue Foam AR 3D Viewer app" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+
+  <!-- Third-party libs (local, no CDN) -->
+  <script src="lib/firebase/firebase-app-compat.js"></script>
+  <script src="lib/firebase/firebase-auth-compat.js"></script>
+  <script src="lib/firebase/firebase-database-compat.js"></script>
+  <script src="lib/chart/chart.umd.min.js"></script>
+  <script src="lib/three/three.min.js"></script>
+  <script src="lib/three/OrbitControls.js"></script>
+  <script src="lib/three/GLTFLoader.js"></script>
+  <script src="lib/three/OBJLoader.js"></script>
+
+  <!-- App config & services -->
+  <script src="config.js"></script>
+  <script src="js/services/firebase.js"></script>
+  <script src="js/services/filebase.js"></script>
+
+  <!-- Components -->
+  <script src="js/components/toast.js"></script>
+  <script src="js/components/modal.js"></script>
+  <script src="js/components/model-viewer.js"></script>
+  <script src="js/components/sidebar.js"></script>
+  <script src="js/components/topbar.js"></script>
+
+  <!-- Pages -->
+  <script src="js/pages/login.js"></script>
+  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/products-add.js"></script>
+  <script src="js/pages/products-list.js"></script>
+  <script src="js/pages/products-media.js"></script>
+  <script src="js/pages/categories.js"></script>
+  <script src="js/pages/customers.js"></script>
+  <script src="js/pages/orders.js"></script>
+  <script src="js/pages/transactions.js"></script>
+  <script src="js/pages/admin-role.js"></script>
+
+  <!-- App entry (must be last) -->
+  <script src="js/app.js"></script>
+</head>
+<body>
+
+  <!-- ─── Login View ─────────────────────────────── -->
+  <div id="login-view" class="login-view hidden"></div>
+
+  <!-- ─── App Shell ─────────────────────────────── -->
+  <div id="app-shell" class="app-shell hidden">
+    <aside id="sidebar" class="sidebar"></aside>
+    <div class="main-wrapper">
+      <header id="topbar" class="topbar"></header>
+      <main id="page-content" class="page-content"></main>
+    </div>
+  </div>
+
+  <!-- ─── Overlays ──────────────────────────────── -->
+  <div id="toast-container" class="toast-container"></div>
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div id="modal-box" class="modal-box"></div>
+  </div>
+
+</body>
+</html>
