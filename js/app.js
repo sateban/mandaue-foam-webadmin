@@ -76,10 +76,16 @@ const App = (() => {
       return;
     }
     try {
-      const res = await fetch('config.json', { cache: 'no-store' });
-      if (!res.ok) return;
-      const cfg = await res.json();
-      if (cfg && cfg.firebase) window.CONFIG = cfg;
+      const candidates = ['config.json', 'app-config.json'];
+      for (const file of candidates) {
+        const res = await fetch(file, { cache: 'no-store' });
+        if (!res.ok) continue;
+        const cfg = await res.json();
+        if (cfg && cfg.firebase) {
+          window.CONFIG = cfg;
+          return;
+        }
+      }
     } catch (_) {}
   }
 

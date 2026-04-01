@@ -70,13 +70,16 @@ jobs:
           }
           EOF
 
+          cp config.js app-config.js
+          cp config.json app-config.json
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Verify generated config artifacts
         shell: bash
         run: |
-          ls -la config.js config.json
+          ls -la config.js config.json app-config.js app-config.json
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
