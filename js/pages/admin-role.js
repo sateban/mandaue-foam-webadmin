@@ -2,7 +2,7 @@
 window.AdminRole = (() => {
   function mount(container) {
     const user = window.FirebaseService?.currentUser();
-    const email = user ? user.email : 'admin@mandauefoam.ph';
+    const email = user ? user.email : 'admin@mandaue.com';
     const name = user ? (user.displayName || 'Admin') : 'System Admin';
 
     container.innerHTML = `

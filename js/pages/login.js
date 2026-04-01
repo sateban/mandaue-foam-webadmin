@@ -20,7 +20,7 @@ window.Login = (() => {
             <label class="form-label">Email Address</label>
             <div class="input-group">
               <svg class="input-group-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-              <input type="email" id="login-email" class="input" placeholder="admin@example.com" required />
+              <input type="email" id="login-email" class="input" placeholder="admin@mandaue.com" required />
             </div>
           </div>
           
