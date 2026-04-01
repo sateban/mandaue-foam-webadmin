@@ -27,6 +27,28 @@ jobs:
       - name: Generate runtime config.json from secrets
         shell: bash
         run: |
+          cat > config.js <<EOF
+          // Generated at deploy time by GitHub Actions.
+          window.CONFIG = {
+            "firebase": {
+              "apiKey": "${{ secrets.FIREBASE_API_KEY }}",
+              "authDomain": "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+              "databaseURL": "${{ secrets.FIREBASE_DATABASE_URL }}",
+              "projectId": "${{ secrets.FIREBASE_PROJECT_ID }}",
+              "storageBucket": "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+              "messagingSenderId": "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+              "appId": "${{ secrets.FIREBASE_APP_ID }}"
+            },
+            "filebase": {
+              "apiKey": "${{ secrets.FILEBASE_API_KEY }}",
+              "apiSecret": "${{ secrets.FILEBASE_API_SECRET }}",
+              "bucketName": "${{ secrets.FILEBASE_BUCKET_NAME }}",
+              "region": "${{ secrets.FILEBASE_REGION }}",
+              "endpoint": "s3.filebase.com"
+            }
+          };
+          EOF
+
           cat > config.json <<EOF
           {
             "firebase": {
@@ -50,6 +72,11 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      - name: Verify generated config artifacts
+        shell: bash
+        run: |
+          ls -la config.js config.json
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
