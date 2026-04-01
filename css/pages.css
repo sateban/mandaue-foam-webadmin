@@ -19,7 +19,7 @@
 }
 .login-logo-icon {
   width: 44px; height: 44px;
-  background: linear-gradient(135deg,#E3291A,#FF6B35);
+  /* background: linear-gradient(135deg,#E3291A,#FF6B35); */
   border-radius: var(--r);
   display: flex; align-items: center; justify-content: center;
 }

@@ -5,7 +5,7 @@ window.Login = (() => {
       <div class="login-card">
         <div class="login-logo">
           <div class="login-logo-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <img src="assets/logo.png" alt="Mandaue Foam logo">
           </div>
           <div class="login-logo-text">
             <h2>AR Admin</h2>
