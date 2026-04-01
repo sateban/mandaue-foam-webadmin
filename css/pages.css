@@ -35,30 +35,147 @@
 /* ── Dashboard ───────────────────────────────────── */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 320px;
-  grid-template-rows: auto auto auto;
+  grid-template-columns: repeat(3, 1fr) minmax(260px, 300px);
   gap: 20px;
+  align-items: start;
 }
 .dash-stat-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  grid-column: 1 / 4;
+  grid-column: 1 / -1;
 }
-.dash-chart-card  { grid-column: 1 / 4; }
-.dash-right-panel { grid-column: 4; grid-row: 1 / 4; }
-.dash-table-card  { grid-column: 1 / 4; }
+.dash-stat-period {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.stat-card-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.stat-card-actions .btn { padding: 4px 10px; font-size: 11px; }
+
+.dash-chart-card  { grid-column: 1 / 4; grid-row: 2; }
+.dash-right-stack {
+  grid-column: 4;
+  grid-row: 2 / 5;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.dash-trans-card { grid-column: 1 / 4; grid-row: 3; }
+.dash-best-card { grid-column: 1 / 4; grid-row: 4; }
+
+.dash-chart-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 0 4px 12px;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 12px;
+}
+.dash-metric-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 72px;
+}
+.dash-metric-chip strong { font-size: 15px; font-weight: 700; color: var(--text); }
+.dash-metric-chip span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; }
+
+.dash-mini-chart-wrap {
+  position: relative;
+  height: 120px;
+  margin-top: 8px;
+}
+.dash-country-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.dash-country-row {
+  display: grid;
+  grid-template-columns: 1fr 40px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+.dash-country-bar {
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 99px;
+  overflow: hidden;
+  grid-column: 1 / -1;
+}
+.dash-country-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  border-radius: 99px;
+}
+
+.dash-top-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.dash-top-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.dash-top-item img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+}
+.dash-top-meta { flex: 1; min-width: 0; }
+.dash-top-meta strong { display: block; font-weight: 600; }
+.dash-top-meta span { font-size: 10px; color: var(--muted); }
+.dash-cat-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.dash-quick-list { display: flex; flex-direction: column; gap: 8px; }
+.dash-quick-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+}
 
 @media (max-width: 1100px) {
-  .dashboard-grid { grid-template-columns: 1fr 1fr 1fr; }
-  .dash-right-panel { grid-column: 1 / 4; grid-row: auto; }
-  .dash-chart-card, .dash-table-card { grid-column: 1 / 4; }
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dash-stat-row { grid-template-columns: 1fr 1fr; }
+  .dash-chart-card { grid-column: 1 / -1; }
+  .dash-right-stack {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .dash-right-stack > .card { flex: 1 1 240px; }
+  .dash-trans-card, .dash-best-card { grid-column: 1 / -1; }
 }
 @media (max-width: 700px) {
-  .dash-stat-row { grid-template-columns: 1fr 1fr; }
+  .dash-stat-row { grid-template-columns: 1fr; }
 }
 
-.chart-container { position: relative; height: 220px; }
+.chart-container { position: relative; height: 240px; }
 
 /* ── Add Product ─────────────────────────────────── */
 .add-product-layout {

@@ -101,12 +101,16 @@ svg { flex-shrink: 0; }
   justify-content: center;
   height: 100vh;
   background: linear-gradient(135deg, #1353B4 0%, #1765D8 50%, #2979E8 100%);
+  position: relative;
+  z-index: 900;
 }
 
 .app-shell {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Sidebar ─────────────────────────────────────── */
@@ -348,18 +352,17 @@ svg { flex-shrink: 0; }
   z-index: 2000;
 }
 
-/* ── Global Watermark (simple) ───────────────────── */
-body::before {
-  content: '';
+/* ── Global Watermark (simple DOM layer; below modal 1000 / toast 2000) ── */
+.global-watermark {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: 800;
   pointer-events: none;
   user-select: none;
-  opacity: 0.10;
+  opacity: 0.16;
   background-repeat: repeat;
   background-size: 340px 240px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='240'%3E%3Cstyle%3Etext%7Bfont-family:Arial,sans-serif;font-size:18px;font-weight:700;fill:%23111827%3B%7D%3C/style%3E%3Cg transform='translate(50,160) rotate(-28)'%3E%3Ctext%3EDEVELOPED BY KB%C2%B2%3C/text%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='240'%3E%3Cstyle%3Etext%7Bfont-family:system-ui,-apple-system,sans-serif;font-size:17px;font-weight:700;fill:%231a1a2e%3B%7D%3C/style%3E%3Cg transform='translate(50,160) rotate(-28)'%3E%3Ctext%3EDEVELOPED BY KB%C2%B2%3C/text%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* ── Scrollbar global ────────────────────────────── */

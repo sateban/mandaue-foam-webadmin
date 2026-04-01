@@ -70,8 +70,16 @@ const Sidebar = (() => {
       document.querySelector('.sidebar-user-avatar').textContent = initial;
     }
 
-    document.getElementById('sidebar-logout-btn')?.addEventListener('click', () => {
-      window.FirebaseService.signOut().then(() => window.location.hash = '#/login');
+    document.getElementById('sidebar-logout-btn')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        await FirebaseService.signOut();
+        window.location.hash = '#/login';
+      } catch (err) {
+        console.error(err);
+        Toast?.error?.(err?.message || 'Logout failed');
+      }
     });
   }
 

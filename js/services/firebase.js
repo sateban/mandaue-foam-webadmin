@@ -72,3 +72,5 @@ const FirebaseService = (() => {
 
   return { init, signIn, signOut, onAuthChange, currentUser, read, write, update, remove, push, newKey, stream, readList };
 })();
+/** Expose for components that reference `window.FirebaseService` (e.g. sidebar logout). */
+window.FirebaseService = FirebaseService;
