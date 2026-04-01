@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    main.css — Design tokens, fonts, layout shell
    ═══════════════════════════════════════════════════ */
 
@@ -137,11 +137,16 @@ svg { flex-shrink: 0; }
   width: 36px;
   height: 36px;
   border-radius: var(--r-sm);
-  background: linear-gradient(135deg, #E3291A, #FF6B35);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+.sidebar-logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .sidebar-logo-text { line-height: 1.2; }
 .sidebar-logo-text strong { font-size: 13px; font-weight: 700; color: var(--text); display: block; }
@@ -260,7 +265,7 @@ svg { flex-shrink: 0; }
 }
 .topbar-search input:focus { border-color: var(--primary); }
 .topbar-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
-.topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; position: relative; }
 .topbar-icon-btn {
   width: 36px; height: 36px;
   border-radius: var(--r-full);
@@ -341,6 +346,20 @@ svg { flex-shrink: 0; }
   position: fixed; top: 20px; right: 20px;
   display: flex; flex-direction: column; gap: 8px;
   z-index: 2000;
+}
+
+/* ── Global Watermark (simple) ───────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.10;
+  background-repeat: repeat;
+  background-size: 340px 240px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='240'%3E%3Cstyle%3Etext%7Bfont-family:Arial,sans-serif;font-size:18px;font-weight:700;fill:%23111827%3B%7D%3C/style%3E%3Cg transform='translate(50,160) rotate(-28)'%3E%3Ctext%3EDEVELOPED BY KB%C2%B2%3C/text%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* ── Scrollbar global ────────────────────────────── */
