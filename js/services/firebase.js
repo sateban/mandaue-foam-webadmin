@@ -33,7 +33,12 @@ const FirebaseService = (() => {
     return err instanceof Error ? err : new Error('Authentication failed');
   }
 
+  const ADMIN_EMAIL = 'admin@mandaue.com';
+
   const signIn = async (email, pw) => {
+    if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      throw new Error('Unauthorized account. Only the system administrator is allowed to sign in.');
+    }
     try {
       return await _auth.signInWithEmailAndPassword(email, pw);
     } catch (err) {
@@ -45,9 +50,26 @@ const FirebaseService = (() => {
       throw mapAuthError(err);
     }
   };
-  const signOut = ()          => _auth.signOut();
-  const onAuthChange = (cb)   => _auth.onAuthStateChanged(cb);
-  const currentUser  = ()     => _auth.currentUser;
+
+  const signOut = () => _auth.signOut();
+  
+  const onAuthChange = (cb) => {
+    _auth.onAuthStateChanged(async (user) => {
+      if (user && user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+        console.warn('Unauthorized user detected, signing out:', user.email);
+        await signOut();
+        cb(null);
+        return;
+      }
+      cb(user);
+    });
+  };
+
+  const currentUser = () => {
+    const user = _auth.currentUser;
+    if (user && user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return null;
+    return user;
+  };
 
   const read   = (path)       => _db.ref(path).once('value').then(s => s.val());
   const write  = (path, data) => _db.ref(path).set(data);
