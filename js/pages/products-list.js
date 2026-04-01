@@ -3,6 +3,7 @@ window.ProductsList = (() => {
   let unsub = null;
   let products = [];
   let categories = {};
+  let imageUrlsByProductId = {};
 
   function mount(container) {
     container.innerHTML = `
@@ -67,6 +68,7 @@ window.ProductsList = (() => {
       unsub = FirebaseService.stream('products', data => {
         products = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
         renderTable();
+        hydrateThumbnailUrls();
       });
     } catch(e) {
       Toast.error(e.message);
@@ -87,7 +89,7 @@ window.ProductsList = (() => {
 
     tbody.innerHTML = products.map(p => {
       const catStr = categories[p.category] || p.category || 'Uncategorized';
-      const img = p.imageUrl ? FilebaseService.publicUrl(p.imageUrl) : '';
+      const img = imageUrlsByProductId[p.id] || (p.imageUrl ? FilebaseService.publicUrl(p.imageUrl) : '');
       const statCls = p.status === 'draft' ? 'badge-neutral' : 'badge-success';
       const statTxt = p.status === 'draft' ? 'Draft' : 'Published';
 
@@ -118,16 +120,44 @@ window.ProductsList = (() => {
     }).join('');
   }
 
+  async function hydrateThumbnailUrls() {
+    const withImage = products.filter(p => p.imageUrl);
+    if (!withImage.length) {
+      imageUrlsByProductId = {};
+      return;
+    }
+
+    const pairs = await Promise.all(withImage.map(async p => {
+      const url = await FilebaseService.resolvePublicReadUrl(p.imageUrl);
+      return [p.id, url];
+    }));
+    imageUrlsByProductId = Object.fromEntries(pairs);
+    renderTable();
+  }
+
   function deleteProduct(id) {
     Modal.confirm({
       title: 'Delete Product',
       message: 'Are you sure you want to delete this product? This action cannot be undone.',
       danger: true,
       confirmText: 'Delete',
-      onConfirm: () => {
-        FirebaseService.remove(`products/${id}`)
-          .then(() => Toast.success('Product deleted'))
-          .catch(e => Toast.error(e.message));
+      onConfirm: async () => {
+        try {
+          const product = await FirebaseService.read(`products/${id}`);
+          const mediaKeys = [product?.imageUrl, product?.modelUrl]
+            .map(v => FilebaseService.resolveObjectKey(v))
+            .filter(Boolean);
+
+          await FirebaseService.remove(`products/${id}`);
+
+          if (mediaKeys.length) {
+            await Promise.allSettled(mediaKeys.map(k => FilebaseService.deleteFile(k)));
+          }
+
+          Toast.success('Product deleted');
+        } catch (e) {
+          Toast.error(e.message);
+        }
       }
     });
   }

@@ -1,6 +1,7 @@
 /* filebase.js — Filebase (S3-compatible) upload/delete using SubtleCrypto SigV4 */
 const FilebaseService = (() => {
   const enc = new TextEncoder();
+  const CORS_HINT = 'Check Filebase bucket CORS: include your exact origin (protocol + host + port), methods GET/PUT/DELETE/HEAD/OPTIONS, and headers Authorization, Content-Type, x-amz-date, x-amz-content-sha256.';
 
   async function hmac(key, data) {
     const k = await crypto.subtle.importKey('raw', typeof key === 'string' ? enc.encode(key) : key,
@@ -12,6 +13,29 @@ const FilebaseService = (() => {
     const buf = typeof data === 'string' ? enc.encode(data) : data;
     return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', buf)))
       .map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function parseXmlError(xmlText) {
+    try {
+      const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+      const code = doc.querySelector('Code')?.textContent || '';
+      const message = doc.querySelector('Message')?.textContent || '';
+      const requestId = doc.querySelector('RequestId')?.textContent || '';
+      if (!code && !message) return '';
+      return [code, message, requestId ? `(RequestId: ${requestId})` : ''].filter(Boolean).join(' - ');
+    } catch (_) {
+      return '';
+    }
+  }
+
+  async function buildHttpError(prefix, res) {
+    let bodyText = '';
+    try {
+      bodyText = await res.text();
+    } catch (_) {}
+    const parsed = bodyText ? parseXmlError(bodyText) : '';
+    const statusPart = `${res.status} ${res.statusText}`.trim();
+    return new Error(parsed ? `${prefix}: ${statusPart}. ${parsed}` : `${prefix}: ${statusPart}`);
   }
 
   function isoDate(d) { return d.toISOString().replace(/[:-]/g, '').replace(/\.\d{3}/,''); }
@@ -67,7 +91,41 @@ const FilebaseService = (() => {
     return `https://${bucketName}.s3.filebase.com/${encodeURIComponent(key).replace(/%2F/g,'/')}`;
   }
 
-  function publicUrl(key) { return bucketUrl(key); }
+  function resolveObjectKey(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (!raw.startsWith('http')) return raw.replace(/^\/+/, '');
+    try {
+      const { bucketName } = CONFIG.filebase;
+      const u = new URL(raw);
+      const hostA = `${bucketName}.s3.filebase.com`;
+      const hostB = 's3.filebase.com';
+      if (u.host === hostA) return decodeURIComponent(u.pathname.replace(/^\/+/, ''));
+      if (u.host === hostB) {
+        const parts = u.pathname.replace(/^\/+/, '').split('/');
+        if (parts[0] === bucketName) return decodeURIComponent(parts.slice(1).join('/'));
+        return decodeURIComponent(parts.join('/'));
+      }
+      return decodeURIComponent(u.pathname.replace(/^\/+/, ''));
+    } catch (_) {
+      return raw.replace(/^\/+/, '');
+    }
+  }
+
+  function publicUrl(value) {
+    const key = resolveObjectKey(value);
+    return key ? bucketUrl(key) : '';
+  }
+
+  async function resolvePublicReadUrl(value) {
+    const key = resolveObjectKey(value);
+    if (!key) return '';
+    try {
+      return await getPresignedUrl(key);
+    } catch (_) {
+      return bucketUrl(key);
+    }
+  }
 
   function normalizeFolder(folder) {
     const raw = String(folder || '').trim().replace(/^\/+|\/+$/g, '');
@@ -133,13 +191,11 @@ const FilebaseService = (() => {
         headers,
         body: new Uint8Array(body)
       });
-      if (!res.ok) throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+      if (!res.ok) throw await buildHttpError('Upload failed', res);
       return { key, url: publicUrl(key) };
     } catch (error) {
       if (error instanceof TypeError) {
-        throw new Error(
-          'Upload blocked by browser/network (possible CORS). Add your local origin to Filebase bucket CORS AllowedOrigins and allow PUT, GET, HEAD, OPTIONS.'
-        );
+        throw new Error(`Upload blocked by browser/network (possible CORS). ${CORS_HINT}`);
       }
       throw error;
     }
@@ -150,7 +206,7 @@ const FilebaseService = (() => {
     const headers = await getSignedHeaders('DELETE', key, null, hash);
     headers['x-amz-content-sha256'] = hash;
     const res = await fetch(bucketUrl(key), { method: 'DELETE', headers });
-    if (!res.ok && res.status !== 204) throw new Error(`Delete failed: ${res.status}`);
+    if (!res.ok && res.status !== 204) throw await buildHttpError('Delete failed', res);
     return true;
   }
 
@@ -188,7 +244,7 @@ const FilebaseService = (() => {
     const res = await fetch(`https://${host}/?${query}`, {
       headers: { 'Authorization': authHeader, 'x-amz-content-sha256': hash, 'x-amz-date': amzDate }
     });
-    if (!res.ok) throw new Error(`List failed: ${res.status}`);
+    if (!res.ok) throw await buildHttpError('List failed', res);
     const xml = await res.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, 'application/xml');
@@ -200,5 +256,5 @@ const FilebaseService = (() => {
     }));
   }
 
-  return { uploadFile, deleteFile, listFiles, publicUrl, getPresignedUrl };
+  return { uploadFile, deleteFile, listFiles, publicUrl, getPresignedUrl, resolveObjectKey, resolvePublicReadUrl };
 })();

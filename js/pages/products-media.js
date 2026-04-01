@@ -31,6 +31,11 @@ window.ProductsMedia = (() => {
     try {
       const lists = await Promise.all(MEDIA_PREFIXES.map(prefix => FilebaseService.listFiles(prefix)));
       files = lists.flat();
+      const resolved = await Promise.all(files.map(async f => {
+        const readUrl = await FilebaseService.resolvePublicReadUrl(f.key);
+        return { ...f, readUrl: readUrl || f.url };
+      }));
+      files = resolved;
       renderList();
     } catch(e) {
       Toast.error('Failed to load media: ' + e.message);
@@ -67,11 +72,11 @@ window.ProductsMedia = (() => {
       const kb = (f.size / 1024).toFixed(1);
 
       let thumb = `<svg class="media-thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>`;
-      if (isImg) thumb = `<img src="${f.url}" loading="lazy" />`;
+      if (isImg) thumb = `<img src="${f.readUrl || f.url}" loading="lazy" />`;
       if (is3D) thumb = `<svg class="media-thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg><div class="media-3d-badge">3D</div>`;
 
       return `
-        <div class="media-item" onclick="window.ProductsMedia.viewFile('${f.url}', '${name}', '${ext}')">
+        <div class="media-item" onclick="window.ProductsMedia.viewFile('${f.readUrl || f.url}', '${name}', '${ext}')">
           <div class="media-thumb">${thumb}</div>
           <div class="media-info">
             <div class="media-info-name truncate" title="${name}">${name}</div>
