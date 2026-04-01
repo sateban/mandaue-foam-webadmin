@@ -2,10 +2,18 @@
 const FirebaseService = (() => {
   let _db, _auth, _initialized = false;
 
+  function getConfig() {
+    const cfg = window.CONFIG;
+    if (!cfg || !cfg.firebase) {
+      throw new Error('Missing Firebase config. Add config.js for local dev or deploy config.json.');
+    }
+    return cfg;
+  }
+
   function init() {
     if (_initialized) return;
     if (!window.firebase) throw new Error('Firebase SDK not loaded');
-    firebase.initializeApp(CONFIG.firebase);
+    firebase.initializeApp(getConfig().firebase);
     _auth = firebase.auth();
     _db   = firebase.database();
     _initialized = true;

@@ -3,6 +3,14 @@ const FilebaseService = (() => {
   const enc = new TextEncoder();
   const CORS_HINT = 'Check Filebase bucket CORS: include your exact origin (protocol + host + port), methods GET/PUT/DELETE/HEAD/OPTIONS, and headers Authorization, Content-Type, x-amz-date, x-amz-content-sha256.';
 
+  function getFilebaseConfig() {
+    const cfg = window.CONFIG;
+    if (!cfg || !cfg.filebase) {
+      throw new Error('Missing Filebase config. Add config.js for local dev or deploy config.json.');
+    }
+    return cfg.filebase;
+  }
+
   async function hmac(key, data) {
     const k = await crypto.subtle.importKey('raw', typeof key === 'string' ? enc.encode(key) : key,
       { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -42,7 +50,7 @@ const FilebaseService = (() => {
   function shortDate(d) { return isoDate(d).slice(0, 8); }
 
   async function getSignedHeaders(method, key, contentType, bodyHash, extraHeaders = {}) {
-    const { apiKey, apiSecret, bucketName, region } = CONFIG.filebase;
+    const { apiKey, apiSecret, bucketName, region } = getFilebaseConfig();
     const now = new Date();
     const amzDate  = isoDate(now);
     const dateStamp = shortDate(now);
@@ -87,7 +95,7 @@ const FilebaseService = (() => {
   }
 
   function bucketUrl(key) {
-    const { bucketName } = CONFIG.filebase;
+    const { bucketName } = getFilebaseConfig();
     return `https://${bucketName}.s3.filebase.com/${encodeURIComponent(key).replace(/%2F/g,'/')}`;
   }
 
@@ -96,7 +104,7 @@ const FilebaseService = (() => {
     if (!raw) return '';
     if (!raw.startsWith('http')) return raw.replace(/^\/+/, '');
     try {
-      const { bucketName } = CONFIG.filebase;
+      const { bucketName } = getFilebaseConfig();
       const u = new URL(raw);
       const hostA = `${bucketName}.s3.filebase.com`;
       const hostB = 's3.filebase.com';
@@ -140,7 +148,7 @@ const FilebaseService = (() => {
   }
 
   async function getPresignedUrl(key) {
-    const { apiKey, apiSecret, bucketName, region } = CONFIG.filebase;
+    const { apiKey, apiSecret, bucketName, region } = getFilebaseConfig();
     if (!key) return '';
     const now = new Date();
     const amzDate = isoDate(now);
@@ -211,12 +219,12 @@ const FilebaseService = (() => {
   }
 
   async function listFiles(prefix) {
-    const { bucketName } = CONFIG.filebase;
+    const { bucketName } = getFilebaseConfig();
     const hash = await sha256hex('');
     const now  = new Date();
     const amzDate   = isoDate(now);
     const dateStamp = shortDate(now);
-    const region    = CONFIG.filebase.region;
+    const region    = getFilebaseConfig().region;
     const service   = 's3';
     const scope     = `${dateStamp}/${region}/${service}/aws4_request`;
     const host      = `${bucketName}.s3.filebase.com`;
@@ -232,14 +240,14 @@ const FilebaseService = (() => {
     const strToSign = ['AWS4-HMAC-SHA256', amzDate, scope,
       await sha256hex(canonicalRequest)].join('\n');
 
-    let signingKey = await hmac('AWS4' + CONFIG.filebase.apiSecret, dateStamp);
+    let signingKey = await hmac('AWS4' + getFilebaseConfig().apiSecret, dateStamp);
     signingKey = await hmac(signingKey, region);
     signingKey = await hmac(signingKey, service);
     signingKey = await hmac(signingKey, 'aws4_request');
     const sigHex = Array.from(await hmac(signingKey, strToSign))
       .map(b => b.toString(16).padStart(2,'0')).join('');
 
-    const authHeader = `AWS4-HMAC-SHA256 Credential=${CONFIG.filebase.apiKey}/${scope},SignedHeaders=host;x-amz-content-sha256;x-amz-date,Signature=${sigHex}`;
+    const authHeader = `AWS4-HMAC-SHA256 Credential=${getFilebaseConfig().apiKey}/${scope},SignedHeaders=host;x-amz-content-sha256;x-amz-date,Signature=${sigHex}`;
 
     const res = await fetch(`https://${host}/?${query}`, {
       headers: { 'Authorization': authHeader, 'x-amz-content-sha256': hash, 'x-amz-date': amzDate }

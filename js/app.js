@@ -15,6 +15,7 @@ const App = (() => {
   };
 
   let currentPage = null;
+  let initialized = false;
 
   async function handleRoute() {
     let path = window.location.hash.slice(1) || '/dashboard';
@@ -68,17 +69,44 @@ const App = (() => {
     }
   }
 
-  function init() {
+  async function ensureConfigLoaded() {
+    if (window.CONFIG?.firebase) return;
     try {
+      const res = await fetch('config.json', { cache: 'no-store' });
+      if (!res.ok) return;
+      const cfg = await res.json();
+      if (cfg && cfg.firebase) window.CONFIG = cfg;
+    } catch (_) {}
+  }
+
+  function showInitError(message) {
+    const loginView = document.getElementById('login-view');
+    const appShell = document.getElementById('app-shell');
+    if (appShell) appShell.classList.add('hidden');
+    if (!loginView) return;
+    loginView.classList.remove('hidden');
+    loginView.innerHTML = `
+      <div class="login-card">
+        <h1>Configuration Error</h1>
+        <p class="sub">${message}</p>
+        <p class="sub">Expected either <code>config.js</code> or deployed <code>config.json</code>.</p>
+      </div>
+    `;
+  }
+
+  async function init() {
+    if (initialized) return;
+    try {
+      await ensureConfigLoaded();
       FirebaseService.init();
       FirebaseService.onAuthChange(() => {
         handleRoute();
       });
       window.addEventListener('hashchange', handleRoute);
+      initialized = true;
     } catch (err) {
       console.error('App init failed:', err);
-      // Wait for scripts if needed
-      setTimeout(init, 500);
+      showInitError(err?.message || 'Failed to initialize app.');
     }
   }
 
