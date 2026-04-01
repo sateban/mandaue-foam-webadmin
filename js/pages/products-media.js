@@ -1,6 +1,7 @@
 /* products-media.js */
 window.ProductsMedia = (() => {
   let files = [];
+  const MEDIA_PREFIXES = ['image-assets/', 'model-assets/'];
 
   function mount(container) {
     container.innerHTML = `
@@ -28,7 +29,8 @@ window.ProductsMedia = (() => {
 
   async function loadFiles() {
     try {
-      files = await FilebaseService.listFiles('assets/');
+      const lists = await Promise.all(MEDIA_PREFIXES.map(prefix => FilebaseService.listFiles(prefix)));
+      files = lists.flat();
       renderList();
     } catch(e) {
       Toast.error('Failed to load media: ' + e.message);
@@ -168,7 +170,7 @@ window.ProductsMedia = (() => {
       document.getElementById('media-upload-prog').classList.remove('hidden');
       dropzone.style.display = 'none';
       try {
-        const folder = file.name.match(/\.(glb|gltf|obj)$/i) ? 'assets/models' : 'assets/images';
+        const folder = file.name.match(/\.(glb|gltf|obj)$/i) ? 'model-assets/products' : 'image-assets/products';
         await FilebaseService.uploadFile(file, folder);
         Toast.success('File uploaded');
         Modal.close();

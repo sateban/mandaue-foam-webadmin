@@ -69,6 +69,18 @@ const FilebaseService = (() => {
 
   function publicUrl(key) { return bucketUrl(key); }
 
+  function normalizeFolder(folder) {
+    const raw = String(folder || '').trim().replace(/^\/+|\/+$/g, '');
+    if (!raw) throw new Error('Upload folder is required.');
+
+    // Keep compatibility with older callers while enforcing standardized folders.
+    const legacyMap = {
+      'assets/images': 'image-assets/products',
+      'assets/models': 'model-assets/products'
+    };
+    return legacyMap[raw] || raw;
+  }
+
   async function getPresignedUrl(key) {
     const { apiKey, apiSecret, bucketName, region } = CONFIG.filebase;
     if (!key) return '';
@@ -107,7 +119,7 @@ const FilebaseService = (() => {
   }
 
   async function uploadFile(file, folder) {
-    const safeFolder = folder.replace(/\/+$/, '');
+    const safeFolder = normalizeFolder(folder);
     const key  = `${safeFolder}/${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
     const body = await file.arrayBuffer();
     const hash = await sha256hex(body);

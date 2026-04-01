@@ -4,6 +4,9 @@ window.ProductsAdd = (() => {
   let file3dPreview = null; // currently selected 3D file for upload
   let imgPreview = null;    // currently selected IMG file for upload
   let editId = null;        // if editing
+  let currentImgObjectUrl = null;
+  const PRODUCT_MODEL_FOLDER = 'model-assets/products';
+  const PRODUCT_IMAGE_FOLDER = 'image-assets/products';
 
   function initMap(product = null) {
     const isEdit = !!product;
@@ -176,10 +179,17 @@ window.ProductsAdd = (() => {
   function setupUploadHandlers() {
     const minput = document.getElementById('model-upload');
     const mdrop  = document.getElementById('model-dropzone');
-    
-    minput.addEventListener('change', e => {
-      const f = e.target.files[0];
-      if(!f) return;
+    const iinput = document.getElementById('img-upload');
+    const idrop  = document.getElementById('img-drop-area');
+
+    if (!minput || !mdrop || !iinput || !idrop) return;
+
+    const showModelPreview = (f) => {
+      if (!f) return;
+      if (!f.name.match(/\.(glb|gltf|obj)$/i)) {
+        Toast.error('Please select a valid 3D model (.glb, .gltf, .obj).');
+        return;
+      }
       file3dPreview = f;
       mdrop.innerHTML = `<p class="text-primary fw-600">${f.name}</p><small>${(f.size/1024).toFixed(1)} KB</small>`;
       
@@ -188,17 +198,77 @@ window.ProductsAdd = (() => {
         viewer.clear();
         viewer.loadFile(f).then(()=>Toast.success('Model loaded')).catch(err=>Toast.error('Load failed: '+err.message));
       }
+    };
+
+    const showImagePreview = (f) => {
+      if (!f) return;
+      if (!f.type || !f.type.startsWith('image/')) {
+        Toast.error('Please select a valid image file.');
+        return;
+      }
+      imgPreview = f;
+      if (currentImgObjectUrl) URL.revokeObjectURL(currentImgObjectUrl);
+      currentImgObjectUrl = URL.createObjectURL(f);
+      idrop.innerHTML = `<img src="${currentImgObjectUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r-sm)" />`;
+    };
+
+    minput.addEventListener('change', e => {
+      showModelPreview(e.target.files[0]);
     });
 
-    const iinput = document.getElementById('img-upload');
-    const idrop  = document.getElementById('img-drop-area');
-
     iinput.addEventListener('change', e => {
-      const f = e.target.files[0];
-      if(!f) return;
-      imgPreview = f;
-      const url = URL.createObjectURL(f);
-      idrop.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r-sm)" />`;
+      showImagePreview(e.target.files[0]);
+    });
+
+    const preventDefault = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    ['dragenter', 'dragover'].forEach(ev => {
+      mdrop.addEventListener(ev, e => {
+        preventDefault(e);
+        mdrop.classList.add('drag-over');
+      });
+      idrop.addEventListener(ev, e => {
+        preventDefault(e);
+        idrop.style.borderColor = 'var(--primary)';
+        idrop.style.background = 'var(--primary-light)';
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(ev => {
+      mdrop.addEventListener(ev, e => {
+        preventDefault(e);
+        mdrop.classList.remove('drag-over');
+      });
+      idrop.addEventListener(ev, e => {
+        preventDefault(e);
+        idrop.style.borderColor = '';
+        idrop.style.background = '';
+      });
+    });
+
+    mdrop.addEventListener('drop', e => {
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      showModelPreview(file);
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        minput.files = dt.files;
+      } catch (_) {}
+    });
+
+    idrop.addEventListener('drop', e => {
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      showImagePreview(file);
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        iinput.files = dt.files;
+      } catch (_) {}
     });
   }
 
@@ -224,12 +294,12 @@ window.ProductsAdd = (() => {
       // Uploads
       if (file3dPreview) {
         btn.textContent = 'Uploading 3D...';
-        const u = await FilebaseService.uploadFile(file3dPreview, 'assets/models');
+        const u = await FilebaseService.uploadFile(file3dPreview, PRODUCT_MODEL_FOLDER);
         modelUrlRes = u.key;
       }
       if (imgPreview) {
         btn.textContent = 'Uploading Img...';
-        const u = await FilebaseService.uploadFile(imgPreview, 'assets/images');
+        const u = await FilebaseService.uploadFile(imgPreview, PRODUCT_IMAGE_FOLDER);
         imageUrlRes = u.key;
       }
 
@@ -274,6 +344,10 @@ window.ProductsAdd = (() => {
 
   function unmount() {
     if(viewer) { viewer.destroy(); viewer = null; }
+    if (currentImgObjectUrl) {
+      URL.revokeObjectURL(currentImgObjectUrl);
+      currentImgObjectUrl = null;
+    }
     file3dPreview = null;
     imgPreview = null;
     editId = null;
