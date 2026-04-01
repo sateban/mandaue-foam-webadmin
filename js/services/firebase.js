@@ -3,7 +3,7 @@ const FirebaseService = (() => {
   let _db, _auth, _initialized = false;
 
   function getConfig() {
-    const cfg = window.CONFIG;
+    const cfg = window.CONFIG || (typeof CONFIG !== 'undefined' ? CONFIG : null);
     if (!cfg || !cfg.firebase) {
       throw new Error('Missing Firebase config. Add config.js for local dev or deploy config.json.');
     }

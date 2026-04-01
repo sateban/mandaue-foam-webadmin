@@ -70,7 +70,11 @@ const App = (() => {
   }
 
   async function ensureConfigLoaded() {
-    if (window.CONFIG?.firebase) return;
+    const runtimeCfg = window.CONFIG || (typeof CONFIG !== 'undefined' ? CONFIG : null);
+    if (runtimeCfg?.firebase) {
+      if (!window.CONFIG) window.CONFIG = runtimeCfg;
+      return;
+    }
     try {
       const res = await fetch('config.json', { cache: 'no-store' });
       if (!res.ok) return;

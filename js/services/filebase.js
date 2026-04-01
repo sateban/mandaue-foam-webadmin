@@ -4,7 +4,7 @@ const FilebaseService = (() => {
   const CORS_HINT = 'Check Filebase bucket CORS: include your exact origin (protocol + host + port), methods GET/PUT/DELETE/HEAD/OPTIONS, and headers Authorization, Content-Type, x-amz-date, x-amz-content-sha256.';
 
   function getFilebaseConfig() {
-    const cfg = window.CONFIG;
+    const cfg = window.CONFIG || (typeof CONFIG !== 'undefined' ? CONFIG : null);
     if (!cfg || !cfg.filebase) {
       throw new Error('Missing Filebase config. Add config.js for local dev or deploy config.json.');
     }
