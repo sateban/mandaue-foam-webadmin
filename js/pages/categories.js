@@ -2,6 +2,7 @@
 window.Categories = (() => {
   let unsub = null;
   let currentImgPreview = null; // Holds the File object when selecting a new image
+  let currentPreviewObjectUrl = null;
 
   function mount(container) {
     container.innerHTML = `
@@ -116,15 +117,60 @@ window.Categories = (() => {
     const input = document.getElementById('cat-img-upload');
     const drop  = document.getElementById('cat-img-drop');
     if (!input || !drop) return;
-    
-    input.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
+
+    const showPreview = file => {
+      if (!file || !file.type || !file.type.startsWith('image/')) {
+        Toast.error('Please select a valid image file.');
+        return;
+      }
       currentImgPreview = file;
-      const url = URL.createObjectURL(file);
+      if (currentPreviewObjectUrl) URL.revokeObjectURL(currentPreviewObjectUrl);
+      currentPreviewObjectUrl = URL.createObjectURL(file);
       drop.style.padding = '0';
       drop.style.overflow = 'hidden';
-      drop.innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:cover;" />`;
+      drop.style.borderColor = '';
+      drop.style.background = '';
+      drop.innerHTML = `<img src="${currentPreviewObjectUrl}" style="width:100%; height:100%; object-fit:cover;" />`;
+    };
+
+    input.addEventListener('change', e => {
+      showPreview(e.target.files[0]);
+    });
+
+    const preventDefault = e => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    drop.addEventListener('dragenter', e => {
+      preventDefault(e);
+      drop.style.borderColor = 'var(--primary)';
+      drop.style.background = 'var(--primary-light)';
+    });
+    drop.addEventListener('dragover', e => {
+      preventDefault(e);
+      drop.style.borderColor = 'var(--primary)';
+      drop.style.background = 'var(--primary-light)';
+    });
+    drop.addEventListener('dragleave', e => {
+      preventDefault(e);
+      drop.style.borderColor = '';
+      drop.style.background = '';
+    });
+    drop.addEventListener('drop', e => {
+      preventDefault(e);
+      drop.style.borderColor = '';
+      drop.style.background = '';
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      showPreview(file);
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+      } catch (_) {
+        // Not critical for save flow because we already track currentImgPreview.
+      }
     });
   }
 
@@ -227,6 +273,10 @@ window.Categories = (() => {
 
   function unmount() {
     if (unsub) unsub();
+    if (currentPreviewObjectUrl) {
+      URL.revokeObjectURL(currentPreviewObjectUrl);
+      currentPreviewObjectUrl = null;
+    }
   }
 
   return { mount, unmount, addCategory, editCategory, saveCategory, deleteCategory };

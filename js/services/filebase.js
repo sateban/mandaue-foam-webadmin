@@ -111,17 +111,26 @@ const FilebaseService = (() => {
     const key  = `${safeFolder}/${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
     const body = await file.arrayBuffer();
     const hash = await sha256hex(body);
-    const headers = await getSignedHeaders('PUT', key, file.type, hash);
-    headers['content-type'] = file.type;
+    const contentType = file.type || 'application/octet-stream';
+    const headers = await getSignedHeaders('PUT', key, contentType, hash);
+    headers['content-type'] = contentType;
     headers['x-amz-content-sha256'] = hash;
-
-    const res = await fetch(bucketUrl(key), {
-      method: 'PUT',
-      headers,
-      body: new Uint8Array(body)
-    });
-    if (!res.ok) throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
-    return { key, url: publicUrl(key) };
+    try {
+      const res = await fetch(bucketUrl(key), {
+        method: 'PUT',
+        headers,
+        body: new Uint8Array(body)
+      });
+      if (!res.ok) throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+      return { key, url: publicUrl(key) };
+    } catch (error) {
+      if (error instanceof TypeError) {
+        throw new Error(
+          'Upload blocked by browser/network (possible CORS). Add your local origin to Filebase bucket CORS AllowedOrigins and allow PUT, GET, HEAD, OPTIONS.'
+        );
+      }
+      throw error;
+    }
   }
 
   async function deleteFile(key) {
