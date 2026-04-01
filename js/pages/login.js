@@ -41,7 +41,7 @@ window.Login = (() => {
     `;
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
-      const email = document.getElementById('login-email').value;
+      const email = document.getElementById('login-email').value.trim();
       const pass = document.getElementById('login-pw').value;
       const btn = document.getElementById('login-submit');
 

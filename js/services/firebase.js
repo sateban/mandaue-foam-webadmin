@@ -1,4 +1,4 @@
-﻿/* firebase.js — Firebase RTDB + Auth service */
+/* firebase.js — Firebase RTDB + Auth service */
 const FirebaseService = (() => {
   let _db, _auth, _initialized = false;
 
@@ -11,7 +11,32 @@ const FirebaseService = (() => {
     _initialized = true;
   }
 
-  const signIn  = (email, pw) => _auth.signInWithEmailAndPassword(email, pw);
+  function mapAuthError(err) {
+    const code = err?.code || '';
+    if (code === 'auth/invalid-credential') {
+      return new Error('Invalid email or password. Verify your credentials and try again.');
+    }
+    if (code === 'auth/invalid-email') {
+      return new Error('Invalid email format.');
+    }
+    if (code === 'auth/too-many-requests') {
+      return new Error('Too many login attempts. Please wait a moment and try again.');
+    }
+    return err instanceof Error ? err : new Error('Authentication failed');
+  }
+
+  const signIn = async (email, pw) => {
+    try {
+      return await _auth.signInWithEmailAndPassword(email, pw);
+    } catch (err) {
+      console.error('Firebase signInWithEmailAndPassword failed:', {
+        code: err?.code,
+        message: err?.message,
+        raw: err
+      });
+      throw mapAuthError(err);
+    }
+  };
   const signOut = ()          => _auth.signOut();
   const onAuthChange = (cb)   => _auth.onAuthStateChanged(cb);
   const currentUser  = ()     => _auth.currentUser;
