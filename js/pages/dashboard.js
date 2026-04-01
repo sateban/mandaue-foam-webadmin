@@ -206,6 +206,13 @@ window.Dashboard = (() => {
     hydrateTopProducts();
   }
 
+  function productImageRef(p) {
+    if (p.imageUrl) return p.imageUrl;
+    if (p.image) return p.image;
+    if (Array.isArray(p.images) && p.images.length) return p.images[0];
+    return '';
+  }
+
   async function hydrateTopProducts() {
     const wrap = document.getElementById('dash-top-products');
     if (!wrap) return;
@@ -216,8 +223,13 @@ window.Dashboard = (() => {
     }
     const rows = await Promise.all(slice.map(async (p) => {
       let src = '';
-      if (p.imageUrl && window.FilebaseService) {
-        try { src = await FilebaseService.resolvePublicReadUrl(p.imageUrl); } catch (_) { src = FilebaseService.publicUrl(p.imageUrl); }
+      const ref = productImageRef(p);
+      if (ref) {
+        try {
+          src = await FilebaseService.resolvePublicReadUrl(ref);
+        } catch (_) {
+          src = FilebaseService.publicUrl(ref);
+        }
       }
       const price = Number(p.price) || 0;
       const id = (p.id || '').substring(0, 8).toUpperCase();

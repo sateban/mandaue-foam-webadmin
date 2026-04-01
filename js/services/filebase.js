@@ -266,3 +266,4 @@ const FilebaseService = (() => {
 
   return { uploadFile, deleteFile, listFiles, publicUrl, getPresignedUrl, resolveObjectKey, resolvePublicReadUrl };
 })();
+window.FilebaseService = FilebaseService;
