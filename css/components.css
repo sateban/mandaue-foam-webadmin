@@ -638,7 +638,7 @@ tbody td {
   }
   .toast-icon svg { width: 16px; height: 16px; }
   .toast-title { font-size: 12px; }
-  .toast-msg { font-size: 11px; visibility: hidden; }
+  .toast-msg { font-size: 11px; visibility: visible; }
   .toast-close { width: 18px; height: 18px; }
   
   /* ── Card ────────────────────────────────────────– */
@@ -667,17 +667,19 @@ tbody td {
   /* ── Dropdown/Panel ──────────────────────────────– */
   .notif-panel {
     position: fixed;
-    top: auto;
+    /* top: auto; */
     bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
-    max-height: 60vh;
+    /* max-height: 60vh; */
+    max-height: 100vh;
     border-radius: var(--r-lg) var(--r-lg) 0 0;
     border: 1px solid var(--border);
     border-bottom: none;
+    z-index: 1400;
   }
-  .notif-panel-list { max-height: calc(60vh - 50px); }
+  .notif-panel-list { max-height: calc(100vh - 50px); overflow-y: auto; }
   .notif-item-title { font-size: 11px; }
   .notif-item-msg { font-size: 10px; }
   .notif-item-time { font-size: 10px; }
