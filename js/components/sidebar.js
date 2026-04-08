@@ -37,9 +37,9 @@ const Sidebar = (() => {
       } else {
         const isActive = activePath === item.id ? 'active' : '';
         html += `
-          <a href="#/${item.id}" class="nav-item ${isActive}">
+          <a href="#/${item.id}" class="nav-item ${isActive}" data-nav="${item.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${item.icon}</svg>
-            ${item.label}
+            <span>${item.label}</span>
           </a>
         `;
       }

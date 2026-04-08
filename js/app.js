@@ -16,6 +16,7 @@ const App = (() => {
 
   let currentPage = null;
   let initialized = false;
+  let sidebarNavBound = false;
 
   async function handleRoute() {
     let path = window.location.hash.slice(1) || '/dashboard';
@@ -49,8 +50,10 @@ const App = (() => {
       Sidebar.render('sidebar', path.replace('/', ''));
       Topbar.render('topbar', route.title);
       
-      // Setup sidebar overlay for mobile
-      setupSidebarOverlay();
+      // Setup sidebar overlay for mobile (only once)
+      if (!document.querySelector('.sidebar-overlay')) {
+        setupSidebarOverlay();
+      }
       
       // Close sidebar on mobile when nav item is clicked
       setupSidebarNavigation();
@@ -117,7 +120,9 @@ const App = (() => {
       overlay.className = 'sidebar-overlay';
       document.body.appendChild(overlay);
     }
-    overlay.addEventListener('click', () => {
+    
+    overlay.addEventListener('click', (e) => {
+      e.stopPropagation();
       const sidebar = document.getElementById('sidebar');
       if (sidebar) {
         sidebar.classList.remove('open');
@@ -129,18 +134,37 @@ const App = (() => {
   function setupSidebarNavigation() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
-    if (!sidebar) return;
-    
-    const navItems = sidebar.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-      item.addEventListener('click', () => {
-        // Close sidebar on mobile
-        if (window.innerWidth < 768) {
-          sidebar.classList.remove('open');
-          if (overlay) overlay.classList.remove('open');
-        }
-      });
-    });
+    if (!sidebar || sidebarNavBound) return;
+
+    const navigateFromSidebar = (e) => {
+      const navItem = e.target.closest('.nav-item');
+      if (!navItem || !sidebar.contains(navItem)) return;
+
+      const navTarget = navItem.getAttribute('data-nav');
+      if (!navTarget) return;
+
+      const nextHash = `#/${String(navTarget).replace(/^#?\/?/, '')}`;
+      const currentHash = window.location.hash || '#/dashboard';
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Ensure route update fires even when tapping current route.
+      if (currentHash === nextHash) {
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      } else {
+        window.location.hash = nextHash;
+      }
+
+      if (window.innerWidth < 768) {
+        sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('open');
+      }
+    };
+
+    sidebar.addEventListener('click', navigateFromSidebar);
+    sidebar.addEventListener('touchend', navigateFromSidebar, { passive: false });
+    sidebarNavBound = true;
   }
 
   async function init() {

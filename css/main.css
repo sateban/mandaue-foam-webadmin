@@ -457,19 +457,30 @@ svg { flex-shrink: 0; }
     top: var(--topbar-h);
     width: 280px;
     height: calc(100vh - var(--topbar-h));
-    background: var(--sidebar-bg);
+    background: #fff;
     border-right: 1px solid var(--border);
-    z-index: 400;
+    z-index: 960;
     transition: left 0.3s ease;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    opacity: 1;
+    filter: none;
   }
+
   .sidebar.open { left: 0; }
   .sidebar-logo { padding: 14px 12px 10px; }
   .sidebar-logo-icon { width: 32px; height: 32px; }
   .sidebar-logo-text strong { font-size: 11px; }
   .sidebar-logo-text span { font-size: 8px; }
   .sidebar-nav { padding: 4px 8px; }
-  .nav-item { font-size: 11px; padding: 6px 8px; gap: 8px; }
+  .nav-item { 
+    font-size: 11px; 
+    padding: 6px 8px; 
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: auto;
+  }
   .nav-item svg { width: 15px; height: 15px; }
   .sidebar-section-label { padding: 10px 12px 2px; font-size: 9px; }
   .sidebar-footer { padding: 8px 8px; }
@@ -482,10 +493,14 @@ svg { flex-shrink: 0; }
   /* ── Sidebar Overlay ────────────────────────────── */
   .sidebar-overlay {
     position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.3);
-    z-index: 350;
+    top: var(--topbar-h);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,.12);
+    z-index: 940;
     display: none;
+    pointer-events: auto;
   }
   .sidebar-overlay.open { display: block; }
   
@@ -500,9 +515,16 @@ svg { flex-shrink: 0; }
   }
   
   .topbar {
+    position: relative;
+    z-index: 970;
+    background: var(--card);
     padding: 0 12px;
     gap: 8px;
     height: var(--topbar-h);
+  }
+  .sidebar,
+  .sidebar.open {
+    background: var(--card) !important;
   }
   .topbar-menu-toggle { display: flex; }
   .topbar-title { font-size: 14px; flex: 1; min-width: 0; }
