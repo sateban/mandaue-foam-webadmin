@@ -387,6 +387,13 @@ svg { flex-shrink: 0; }
   justify-content: center;
   margin-right: auto;
 }
+
+aside#sidebar.open ~ .main-wrapper .topbar-actions {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
 .topbar-menu-toggle:hover { background: var(--bg); color: var(--text); }
 .topbar-menu-toggle svg { width: 20px; height: 20px; }
 
@@ -494,15 +501,18 @@ svg { flex-shrink: 0; }
   .sidebar-overlay {
     position: fixed;
     top: var(--topbar-h);
-    left: 0;
+    left: 280px;
     right: 0;
     bottom: 0;
     background: rgba(0,0,0,.12);
     z-index: 940;
     display: none;
+    pointer-events: none;
+  }
+  .sidebar-overlay.open {
+    display: block;
     pointer-events: auto;
   }
-  .sidebar-overlay.open { display: block; }
   
   /* ── Topbar - Mobile Adjustments ────────────────── */
   .main-wrapper { 
@@ -703,6 +713,7 @@ svg { flex-shrink: 0; }
 /* -- Small Mobile (< 480px) ────────────────────── */
 @media (max-width: 480px) {
   .sidebar { width: 260px; }
+  .sidebar-overlay { left: 260px; }
   .topbar { padding: 0 10px; }
   .page-content { padding: 10px; }
   .page-header { margin-bottom: 10px; }
