@@ -1,0 +1,264 @@
+/* ═══════════════════════════════════════════════════
+   responsive-utilities.css
+   Quick responsive utility classes for mobile-first development
+   ═══════════════════════════════════════════════════ */
+
+/* Breakpoints:
+   Mobile: < 480px
+   Tablet: 480px - 1024px
+   Desktop: > 1024px
+*/
+
+/* ── Display Utilities ────────────────────────────── */
+.hidden-mobile { display: block; }
+.hidden-tablet { display: block; }
+.hidden-desktop { display: none; }
+
+.show-mobile { display: none; }
+.show-tablet { display: none; }
+.show-desktop { display: block; }
+
+@media (max-width: 768px) {
+  .hidden-mobile { display: none !important; }
+  .show-mobile { display: block !important; }
+  .show-mobile.flex { display: flex !important; }
+  .show-mobile.grid { display: grid !important; }
+  .show-mobile.inline-flex { display: inline-flex !important; }
+}
+
+@media (max-width: 1024px) {
+  .hidden-tablet { display: none !important; }
+  .show-tablet { display: block !important; }
+  .show-tablet.flex { display: flex !important; }
+  .show-tablet.grid { display: grid !important; }
+}
+
+@media (max-width: 1024px) {
+  .hidden-desktop { display: block !important; }
+  .show-desktop { display: none !important; }
+}
+
+/* ── Spacing - Responsive ────────────────────────── */
+.px-responsive { padding-left: 12px; padding-right: 12px; }
+.py-responsive { padding-top: 12px; padding-bottom: 12px; }
+
+@media (min-width: 768px) {
+  .px-responsive { padding-left: 16px; padding-right: 16px; }
+  .py-responsive { padding-top: 16px; padding-bottom: 16px; }
+}
+
+@media (min-width: 1024px) {
+  .px-responsive { padding-left: 20px; padding-right: 20px; }
+  .py-responsive { padding-top: 20px; padding-bottom: 20px; }
+}
+
+/* ── Flex Direction - Responsive ─────────────────── */
+.flex-col-mobile { flex-direction: column; }
+.flex-row-mobile { flex-direction: row; }
+
+@media (min-width: 768px) {
+  .flex-col-tablet { flex-direction: column; }
+  .flex-row-tablet { flex-direction: row; }
+}
+
+@media (min-width: 1024px) {
+  .flex-col-desktop { flex-direction: column; }
+  .flex-row-desktop { flex-direction: row; }
+}
+
+/* ── Grid Columns - Responsive ───────────────────– */
+.grid-auto { grid-template-columns: 1fr; }
+
+@media (min-width: 640px) {
+  .grid-2-mobile { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 768px) {
+  .grid-2-tablet { grid-template-columns: repeat(2, 1fr); }
+  .grid-3-tablet { grid-template-columns: repeat(3, 1fr); }
+  .grid-4-tablet { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .grid-2-desktop { grid-template-columns: repeat(2, 1fr); }
+  .grid-3-desktop { grid-template-columns: repeat(3, 1fr); }
+  .grid-4-desktop { grid-template-columns: repeat(4, 1fr); }
+  .grid-5-desktop { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* ── Font Size - Responsive ──────────────────────– */
+.text-sm-mobile { font-size: 11px; }
+.text-base-mobile { font-size: 12px; }
+.text-lg-mobile { font-size: 14px; }
+.text-xl-mobile { font-size: 16px; }
+
+@media (min-width: 768px) {
+  .text-sm-tablet { font-size: 12px; }
+  .text-base-tablet { font-size: 13px; }
+  .text-lg-tablet { font-size: 15px; }
+  .text-xl-tablet { font-size: 18px; }
+}
+
+@media (min-width: 1024px) {
+  .text-sm-desktop { font-size: 12px; }
+  .text-base-desktop { font-size: 14px; }
+  .text-lg-desktop { font-size: 16px; }
+  .text-xl-desktop { font-size: 20px; }
+}
+
+/* ── Max Width - Responsive ──────────────────────– */
+.container-mobile { max-width: 100%; }
+.container-tablet { max-width: 100%; }
+.container-desktop { max-width: 100%; }
+
+@media (min-width: 640px) {
+  .container-mobile { max-width: 640px; }
+}
+
+@media (min-width: 768px) {
+  .container-tablet { max-width: 768px; }
+}
+
+@media (min-width: 1024px) {
+  .container-desktop { max-width: 1280px; }
+}
+
+/* ── Width Utilities ─────────────────────────────– */
+.w-full { width: 100%; }
+.w-half { width: 50%; }
+.w-third { width: 33.333%; }
+
+@media (max-width: 768px) {
+  .w-half-mobile { width: 100%; }
+  .w-full-mobile { width: 100%; }
+}
+
+/* ── Height Utilities ────────────────────────────– */
+.h-auto { height: auto; }
+.h-full { height: 100%; }
+
+@media (max-width: 768px) {
+  .h-auto-mobile { height: auto; }
+}
+
+/* ── Aspect Ratio ────────────────────────────────– */
+.aspect-square { aspect-ratio: 1 / 1; }
+.aspect-video { aspect-ratio: 16 / 9; }
+.aspect-4-3 { aspect-ratio: 4 / 3; }
+
+/* ── Overflow - Responsive ──────────────────────– */
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+
+@media (max-width: 768px) {
+  .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ── Alignment - Responsive ────────────────────── */
+.text-center-mobile { text-align: center; }
+
+@media (min-width: 768px) {
+  .text-left-tablet { text-align: left; }
+  .text-right-tablet { text-align: right; }
+}
+
+/* ── Gap - Responsive ────────────────────────────– */
+.gap-2-mobile { gap: 8px; }
+.gap-3-mobile { gap: 12px; }
+.gap-4-mobile { gap: 16px; }
+
+@media (min-width: 768px) {
+  .gap-2-tablet { gap: 12px; }
+  .gap-3-tablet { gap: 16px; }
+  .gap-4-tablet { gap: 20px; }
+}
+
+@media (min-width: 1024px) {
+  .gap-2-desktop { gap: 16px; }
+  .gap-3-desktop { gap: 20px; }
+  .gap-4-desktop { gap: 24px; }
+}
+
+/* ── Border Radius - Responsive ─────────────────– */
+.rounded-mobile { border-radius: 8px; }
+.rounded-md-mobile { border-radius: 10px; }
+.rounded-lg-mobile { border-radius: 12px; }
+
+@media (min-width: 768px) {
+  .rounded-tablet { border-radius: 10px; }
+  .rounded-md-tablet { border-radius: 12px; }
+  .rounded-lg-tablet { border-radius: 14px; }
+}
+
+/* ── Margin - Responsive ────────────────────────– */
+.mx-auto-mobile { margin-left: auto; margin-right: auto; }
+.mb-2-mobile { margin-bottom: 8px; }
+.mb-4-mobile { margin-bottom: 16px; }
+.mt-2-mobile { margin-top: 8px; }
+.mt-4-mobile { margin-top: 16px; }
+
+@media (min-width: 768px) {
+  .mx-auto-tablet { margin-left: auto; margin-right: auto; }
+  .mb-4-tablet { margin-bottom: 20px; }
+  .mt-4-tablet { margin-top: 20px; }
+}
+
+/* ── Justify Content - Responsive ───────────────– */
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.justify-start { justify-content: flex-start; }
+.justify-end { justify-content: flex-end; }
+
+@media (max-width: 768px) {
+  .justify-center-mobile { justify-content: center; }
+}
+
+/* ── Align Items - Responsive ───────────────────– */
+.items-start { align-items: flex-start; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+
+/* ── Position - Responsive ──────────────────────– */
+.sticky { position: sticky; }
+.sticky-tablet { position: sticky; }
+.sticky-desktop { position: sticky; }
+
+@media (max-width: 768px) {
+  .sticky-mobile { position: relative; }
+  .sticky-tablet { position: relative; }
+}
+
+/* ── Z Index - Responsive ───────────────────────– */
+.z-10 { z-index: 10; }
+.z-20 { z-index: 20; }
+.z-50 { z-index: 50; }
+.z-auto { z-index: auto; }
+
+/* ── Opacity - Responsive ───────────────────────– */
+.opacity-100 { opacity: 1; }
+.opacity-75 { opacity: 0.75; }
+.opacity-50 { opacity: 0.5; }
+.opacity-0 { opacity: 0; }
+
+/* ── Box Shadow - Responsive ────────────────────– */
+.shadow-none { box-shadow: none; }
+.shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.shadow { box-shadow: 0 4px 6px rgba(0,0,0,.07); }
+.shadow-lg { box-shadow: 0 10px 15px rgba(0,0,0,.10); }
+
+@media (max-width: 768px) {
+  .shadow-mobile { box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+}
+
+/* ── Transform - Responsive ────────────────────– */
+.scale-100 { transform: scale(1); }
+.scale-105 { transform: scale(1.05); }
+.scale-110 { transform: scale(1.1); }
+
+/* ── Transition - Responsive ──────────────────── */
+.transition { transition: all 0.18s ease; }
+.transition-none { transition: none; }
+
+/* Note: To use these utilities in your HTML, simply add the class name:
+   Example: <div class="grid-2-tablet text-lg-mobile">
+*/

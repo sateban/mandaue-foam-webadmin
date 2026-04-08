@@ -142,6 +142,9 @@ const Topbar = (() => {
     if (!el) return;
     
     el.innerHTML = `
+      <button class="topbar-menu-toggle" id="topbar-menu-toggle" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
       <div class="topbar-title">${title}</div>
       <div class="topbar-search">
         <svg class="topbar-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -163,6 +166,23 @@ const Topbar = (() => {
         </div>
       </div>
     `;
+
+    /* Hamburger menu toggle */
+    document.getElementById('topbar-menu-toggle')?.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      if (!sidebar) return;
+      
+      const isOpen = sidebar.classList.contains('open');
+      if (isOpen) {
+        sidebar.classList.remove('open');
+        overlay?.classList.remove('open');
+      } else {
+        sidebar.classList.add('open');
+        overlay?.classList.add('open');
+      }
+    });
 
     document.getElementById('topbar-notif-btn')?.addEventListener('click', (ev) => {
       ev.stopPropagation();
