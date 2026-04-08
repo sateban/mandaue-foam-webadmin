@@ -106,10 +106,6 @@ window.ProductsAdd = (() => {
                 <label class="form-label">Discount (%)</label>
                 <input type="number" id="pa-discount" class="input" placeholder="e.g. 10" />
               </div>
-              <div class="form-group">
-                <label class="form-label">Quantity</label>
-                <input type="number" id="pa-qty" class="input" placeholder="0" />
-              </div>
               <div class="form-group" style="justify-content:center;padding-top:20px">
                 <label class="form-toggle">
                   <input type="checkbox" id="pa-stock" checked />
