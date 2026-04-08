@@ -443,3 +443,323 @@ tbody td {
 .notif-item-msg { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .notif-item-time { font-size: 11px; color: var(--subtle); margin-top: 4px; }
 .notif-empty { padding: 20px 12px; font-size: 12px; color: var(--muted); text-align: center; }
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE COMPONENTS — Mobile, Tablet, Desktop
+   ═══════════════════════════════════════════════════ */
+
+/* ── Tablet (768px - 1024px) ────────────────────────── */
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  
+  .table-wrap { margin-bottom: 12px; }
+  .td-product-img { width: 32px; height: 32px; }
+  .td-actions button { width: 28px; height: 28px; font-size: 10px; }
+  
+  .notif-panel { width: 300px; right: 12px; max-height: 380px; }
+  .notif-panel-list { max-height: 320px; }
+  .notif-item-title { font-size: 11px; }
+  .notif-item-msg { font-size: 11px; }
+  
+  .modal-lg { max-width: 600px; }
+  .modal-xl { max-width: 800px; }
+}
+
+/* ── Mobile (< 768px) ──────────────────────────────────── */
+@media (max-width: 768px) {
+  /* ── Grid Layouts ────────────────────────────────– */
+  .grid-4 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  
+  /* ── Input Group ─────────────────────────────────– */
+  .form-group { margin-bottom: 10px; }
+  .input-group .input { 
+    padding-left: 30px;
+    padding-right: 8px;
+  }
+  .input-addon { right: 8px; font-size: 12px; }
+  .input-group-icon { left: 8px; }
+  
+  /* ── Forms - Stacked on Mobile ───────────────────– */
+  .form-row { 
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .form-row > .form-group { margin-bottom: 0; }
+  
+  /* ── Buttons - Full Width on Mobile ──────────────– */
+  .btn-group { 
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  .btn-group .btn { width: 100%; }
+  
+  /* ── Tables - Horizontal Scroll on Mobile ────────– */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-toolbar {
+    flex-wrap: wrap;
+    padding: 10px;
+    gap: 10px;
+  }
+  .table-toolbar h3 { 
+    width: 100%;
+    font-size: 12px;
+  }
+  .table-toolbar-right {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .table-toolbar-right .btn { 
+    flex-shrink: 0;
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+  
+  .search-input-wrap input {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  table {
+    min-width: 100%;
+  }
+  thead th {
+    white-space: nowrap;
+    padding: 8px;
+    font-size: 10px;
+  }
+  tbody td {
+    padding: 8px;
+    font-size: 10px;
+  }
+  .td-actions {
+    flex-direction: row-reverse;
+  }
+  .td-product { 
+    flex-direction: column;
+    gap: 4px;
+  }
+  .td-product-img {
+    width: 40px;
+    height: 40px;
+  }
+  
+  /* ── Badges & Chips ──────────────────────────────– */
+  .badge { 
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+  .chip { 
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+  .chip-list { gap: 4px; }
+  
+  /* ── Pagination - Mobile Friendly ────────────────– */
+  .pagination {
+    flex-direction: column;
+    padding: 10px;
+    gap: 8px;
+  }
+  .pagination-info { 
+    font-size: 10px;
+    width: 100%;
+  }
+  .pagination-pages {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pg-btn {
+    min-width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+  .pg-nav-btn {
+    font-size: 10px;
+    padding: 4px 8px;
+    flex: 1;
+    justify-content: center;
+  }
+  
+  /* ── Tabs - Mobile Scroll ────────────────────────– */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 2px;
+    padding-bottom: 8px;
+  }
+  .tab-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  
+  /* ── Modal - Full Mobile ─────────────────────────– */
+  .modal-overlay { padding: 12px; }
+  .modal-box {
+    max-width: 100%;
+    width: 100%;
+    max-height: 85vh;
+    border-radius: 12px;
+  }
+  .modal-header h3 { font-size: 13px; }
+  .modal-body { padding: 12px; }
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+    padding: 12px;
+  }
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .modal-lg { max-width: 100%; }
+  .modal-xl { max-width: 100%; }
+  
+  /* ── Toast - Mobile ──────────────────────────────– */
+  .toast {
+    min-width: auto;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    font-size: 11px;
+    padding: 10px 12px;
+  }
+  .toast-icon svg { width: 16px; height: 16px; }
+  .toast-title { font-size: 12px; }
+  .toast-msg { font-size: 11px; visibility: hidden; }
+  .toast-close { width: 18px; height: 18px; }
+  
+  /* ── Card ────────────────────────────────────────– */
+  .card-body { padding: 12px; }
+  .card-header { 
+    padding: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .card-header h3 { font-size: 12px; width: 100%; }
+  
+  /* ── Stat Card ───────────────────────────────────– */
+  .stat-card { padding: 14px; }
+  .stat-card-header { 
+    margin-bottom: 8px;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat-card-header h4 { font-size: 12px; }
+  .stat-card-value { font-size: 22px; margin-bottom: 4px; }
+  .stat-card-footer { gap: 4px; flex-wrap: wrap; }
+  .stat-card-trend { font-size: 11px; }
+  .stat-card-period { font-size: 11px; }
+  
+  /* ── Dropdown/Panel ──────────────────────────────– */
+  .notif-panel {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 60vh;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    border: 1px solid var(--border);
+    border-bottom: none;
+  }
+  .notif-panel-list { max-height: calc(60vh - 50px); }
+  .notif-item-title { font-size: 11px; }
+  .notif-item-msg { font-size: 10px; }
+  .notif-item-time { font-size: 10px; }
+  
+  /* ── Dropzone ────────────────────────────────────– */
+  .dropzone {
+    padding: 20px 12px;
+    border-radius: 8px;
+  }
+  .dropzone-icon { font-size: 28px; }
+  .dropzone p { font-size: 11px; }
+  .dropzone small { font-size: 10px; }
+  
+  /* ── Color Swatches ──────────────────────────────– */
+  .color-swatches { gap: 6px; }
+  .color-swatch {
+    width: 24px;
+    height: 24px;
+    border-width: 2px;
+  }
+  
+  /* ── Toggle ──────────────────────────────────────– */
+  .form-toggle-track { 
+    width: 32px;
+    height: 18px;
+  }
+  .form-toggle-track::after {
+    width: 12px;
+    height: 12px;
+    top: 3px;
+  }
+  .form-toggle input:checked + .form-toggle-track::after { left: 17px; }
+  .form-toggle-label { font-size: 12px; }
+  
+  /* ── Empty State ─────────────────────────────────– */
+  .empty-state {
+    padding: 30px 16px;
+  }
+  .empty-state svg { width: 36px; height: 36px; }
+  .empty-state h4 { font-size: 12px; }
+  .empty-state p { font-size: 11px; }
+}
+
+/* ── Small Mobile (< 480px) ──────────────────────────━ */
+@media (max-width: 480px) {
+  /* Reduce sizes further for very small screens */
+  .btn { 
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .btn-sm {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  .btn-icon {
+    width: 30px;
+    height: 30px;
+    padding: 4px;
+  }
+  
+  .input, .textarea, .select {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  
+  .toast {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    padding: 8px 10px;
+  }
+  
+  .modal-box { max-height: 90vh; }
+  .modal-header { padding: 10px; }
+  .modal-body { padding: 10px; }
+  .modal-footer { padding: 10px; gap: 6px; }
+  
+  .table-toolbar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .table-toolbar h3 { font-size: 11px; }
+  
+  thead th { padding: 6px; }
+  tbody td { padding: 6px; }
+}

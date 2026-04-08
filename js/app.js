@@ -48,6 +48,12 @@ const App = (() => {
       // Render shell parts
       Sidebar.render('sidebar', path.replace('/', ''));
       Topbar.render('topbar', route.title);
+      
+      // Setup sidebar overlay for mobile
+      setupSidebarOverlay();
+      
+      // Close sidebar on mobile when nav item is clicked
+      setupSidebarNavigation();
     }
 
     // Unmount previous
@@ -102,6 +108,39 @@ const App = (() => {
         <p class="sub">Expected either <code>config.js</code> or deployed <code>config.json</code>.</p>
       </div>
     `;
+  }
+
+  function setupSidebarOverlay() {
+    let overlay = document.querySelector('.sidebar-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'sidebar-overlay';
+      document.body.appendChild(overlay);
+    }
+    overlay.addEventListener('click', () => {
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+      }
+    });
+  }
+
+  function setupSidebarNavigation() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (!sidebar) return;
+    
+    const navItems = sidebar.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        // Close sidebar on mobile
+        if (window.innerWidth < 768) {
+          sidebar.classList.remove('open');
+          if (overlay) overlay.classList.remove('open');
+        }
+      });
+    });
   }
 
   async function init() {
