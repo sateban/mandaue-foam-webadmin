@@ -25,54 +25,76 @@ window.Categories = (() => {
   async function renderList(val) {
     const grid = document.getElementById('cat-grid');
     if (!grid) return;
-    
-    if (!val || (Array.isArray(val) && val.filter(c => c !== null).length === 0) || Object.keys(val).length === 0) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-        <h4>No categories</h4>
-        <p>Create a category to get started organizing products.</p>
-      </div>`;
-      return;
-    }
 
-    let items = [];
-    if (Array.isArray(val)) {
-      items = val.filter(c => c !== null); 
-    } else {
-      items = Object.entries(val).map(([k, data]) => ({ id: data.id || k, ...data }));
-    }
-
-    const htmlPromises = items.map(async c => {
-      const safeName = (c.name || '').replace(/'/g, "\\'");
-      const safeDesc = (c.description || '').replace(/'/g, "\\'");
-      const safeImg  = (c.imageUrl || '').replace(/'/g, "\\'");
-      const safeId = (c.id || '').replace(/'/g, "\\'");
-      
-      let imgHtml = `
-        <div class="cat-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-        </div>
-      `;
-      if (c.imageUrl) {
-        const url = await FilebaseService.getPresignedUrl(c.imageUrl);
-        imgHtml = `
-          <div style="width: 48px; height: 48px; margin: 0 auto 10px; border-radius: var(--r); overflow: hidden; background: var(--bg);">
-            <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src=''; this.onerror=null; this.parentElement.innerHTML='<svg style=\\'margin-top:12px;color:var(--muted)\\' width=\\'24\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg>';" />
-          </div>
-        `;
+    try {
+      if (!val || (Array.isArray(val) && val.filter(c => c !== null).length === 0) || Object.keys(val).length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">
+          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+          <h4>No categories</h4>
+          <p>Create a category to get started organizing products.</p>
+        </div>`;
+        return;
       }
 
-      return `
-        <div class="cat-card" onclick="window.Categories.editCategory('${safeId}', '${safeName}', '${safeDesc}', '${safeImg}')">
-          ${imgHtml}
-          <h4>${c.name}</h4>
-          ${c.description ? `<span>${c.description}</span>` : ''}
-        </div>
-      `;
-    });
+      let items = [];
+      if (Array.isArray(val)) {
+        items = val.filter(c => c !== null);
+      } else {
+        items = Object.entries(val).map(([k, data]) => ({ id: data.id || k, ...data }));
+      }
 
-    const renderedHTML = await Promise.all(htmlPromises);
-    grid.innerHTML = renderedHTML.join('');
+      const htmlPromises = items.map(async c => {
+        const safeName = (c.name || '').replace(/'/g, "\\'");
+        const safeDesc = (c.description || '').replace(/'/g, "\\'");
+        const safeImg  = (c.imageUrl || '').replace(/'/g, "\\'");
+        const safeId = (c.id || '').replace(/'/g, "\\'");
+
+        let imgHtml = `
+          <div class="cat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          </div>
+        `;
+
+        if (c.imageUrl) {
+          try {
+            const url = await FilebaseService.getPresignedUrl(c.imageUrl);
+            imgHtml = `
+              <div style="width: 48px; height: 48px; margin: 0 auto 10px; border-radius: var(--r); overflow: hidden; background: var(--bg);">
+                <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src=''; this.onerror=null; this.parentElement.innerHTML='<svg style=\\'margin-top:12px;color:var(--muted)\\' width=\\'24\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg>';" />
+              </div>
+            `;
+          } catch (_) {
+            // Keep rendering with fallback icon if image URL resolution fails.
+          }
+        }
+
+        return `
+          <div class="cat-card" onclick="window.Categories.editCategory('${safeId}', '${safeName}', '${safeDesc}', '${safeImg}')">
+            ${imgHtml}
+            <h4>${c.name}</h4>
+            ${c.description ? `<span>${c.description}</span>` : ''}
+          </div>
+        `;
+      });
+
+      const renderedHTML = await Promise.allSettled(htmlPromises);
+      const cards = renderedHTML
+        .filter(result => result.status === 'fulfilled')
+        .map(result => result.value);
+
+      grid.innerHTML = cards.length
+        ? cards.join('')
+        : `<div class="empty-state" style="grid-column: 1/-1">
+            <h4>Unable to render categories</h4>
+            <p>Please try refreshing the page.</p>
+          </div>`;
+    } catch (err) {
+      console.error('Categories render failed:', err);
+      grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">
+        <h4>Unable to load categories</h4>
+        <p>Check your connection and try again.</p>
+      </div>`;
+    }
   }
 
   function getFormHtml(id, name, desc, imgUrl, presignedUrl) {
