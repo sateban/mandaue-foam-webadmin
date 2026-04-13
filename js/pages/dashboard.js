@@ -260,9 +260,6 @@ window.Dashboard = (() => {
             <div class="card-body">
               <div class="stat-card-value mb-1" id="dash-users-val">0</div>
               <div class="text-xs text-muted">Orders placed in the last 30 minutes (activity proxy)</div>
-              <div class="dash-mini-chart-wrap">
-                <canvas id="dash-users-chart"></canvas>
-              </div>
             </div>
           </div>
           <div class="card">
