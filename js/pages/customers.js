@@ -48,39 +48,6 @@ window.Customers = (() => {
             </div>
           </div>
         </div>
-
-        <div class="card customer-overview-card">
-          <div class="card-header">
-            <h3>Customer Overview</h3>
-            <div class="customer-range-wrap">
-              <button class="range-chip active" data-range="this-week">This week</button>
-              <button class="range-chip" data-range="last-week">Last week</button>
-              <button class="range-chip" data-range="last-30">Last 30 days</button>
-              <button class="range-chip" data-range="all">All time</button>
-            </div>
-          </div>
-          <div class="customer-overview-metrics">
-            <div class="customer-overview-cell">
-              <div class="val" id="c-m-active">0</div>
-              <div class="lbl">Active Customers</div>
-            </div>
-            <div class="customer-overview-cell">
-              <div class="val" id="c-m-repeat">0</div>
-              <div class="lbl">Repeat Customers</div>
-            </div>
-            <div class="customer-overview-cell">
-              <div class="val" id="c-m-visits">0</div>
-              <div class="lbl">Shop Visits</div>
-            </div>
-            <div class="customer-overview-cell">
-              <div class="val" id="c-m-conv">0%</div>
-              <div class="lbl">Conversion Rate</div>
-            </div>
-          </div>
-          <div class="card-body chart-container">
-            <canvas id="customers-overview-chart"></canvas>
-          </div>
-        </div>
       </div>
 
       <div class="customers-layout">
@@ -102,8 +69,6 @@ window.Customers = (() => {
                   <th width="40"><input type="checkbox" /></th>
                   <th>Customer Name</th>
                   <th>Phone No.</th>
-                  <th>Orders</th>
-                  <th>Spent</th>
                 </tr>
               </thead>
               <tbody id="c-table">
@@ -119,20 +84,6 @@ window.Customers = (() => {
             <div style="flex:1">
               <div class="fw-700" id="cd-name">Select Customer</div>
               <div class="text-xs text-muted" id="cd-email">---</div>
-            </div>
-          </div>
-          <div class="cust-order-summary">
-            <div class="cust-order-cell">
-              <div class="val" id="cd-total">0</div>
-              <div class="lbl">Total Orders</div>
-            </div>
-            <div class="cust-order-cell">
-              <div class="val text-success" id="cd-done">0</div>
-              <div class="lbl">Completed</div>
-            </div>
-            <div class="cust-order-cell">
-              <div class="val text-danger" id="cd-cancel">0</div>
-              <div class="lbl">Canceled</div>
             </div>
           </div>
           <div class="card-body" style="padding-top:0">

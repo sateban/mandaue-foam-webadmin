@@ -252,78 +252,10 @@ window.Dashboard = (() => {
       </div>
 
       <div class="dashboard-grid">
-        <div class="dash-stat-row">
-          <div class="card stat-card">
-            <div class="stat-card-header">
-              <div>
-                <h4>Total Sales</h4>
-                <div class="dash-stat-period">Last 7 days</div>
-              </div>
-              <div class="stat-card-menu"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></div>
-            </div>
-            <div class="stat-card-value" id="dash-rev">₱ 0.00</div>
-            <div class="stat-card-footer">
-              <span class="stat-card-trend trend-up" id="dash-trend-rev">↑ 0%</span>
-              <span class="stat-card-period">vs last week</span>
-            </div>
-            <div class="mt-2"><a href="#/transactions" class="btn btn-outline btn-sm">Details</a></div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-card-header">
-              <div>
-                <h4>Total Orders</h4>
-                <div class="dash-stat-period">Last 7 days</div>
-              </div>
-              <div class="stat-card-menu"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></div>
-            </div>
-            <div class="stat-card-value" id="dash-ord">0</div>
-            <div class="stat-card-footer">
-              <span class="stat-card-trend trend-down" id="dash-trend-ord">↓ 0%</span>
-              <span class="stat-card-period">vs last week</span>
-            </div>
-            <div class="mt-2"><a href="#/orders" class="btn btn-outline btn-sm">Details</a></div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-card-header">
-              <div>
-                <h4>Pending &amp; Canceled</h4>
-                <div class="dash-stat-period">Last 7 days</div>
-              </div>
-              <div class="stat-card-menu"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></div>
-            </div>
-            <div class="stat-card-value" style="font-size:22px;">—</div>
-            <div class="stat-card-footer" style="flex-wrap:wrap;gap:8px;">
-              <span class="badge badge-warning"><div class="badge-dot"></div><span id="dash-pend">0</span> Pending</span>
-              <span class="badge badge-danger"><div class="badge-dot"></div><span id="dash-canc">0</span> Canceled</span>
-            </div>
-            <div class="mt-2"><a href="#/orders" class="btn btn-outline btn-sm">Details</a></div>
-          </div>
-        </div>
-
-        <div class="card dash-chart-card">
-          <div class="dash-chart-metrics">
-            <div class="dash-metric-chip"><strong id="dash-chip-customers">0</strong><span>Customers</span></div>
-            <div class="dash-metric-chip"><strong id="dash-chip-products">0</strong><span>Total products</span></div>
-            <div class="dash-metric-chip"><strong id="dash-chip-stock">0</strong><span>Stock units</span></div>
-            <div class="dash-metric-chip"><strong id="dash-chip-oos">0</strong><span>Out of stock</span></div>
-            <div class="dash-metric-chip"><strong id="dash-chip-rev">₱ 0</strong><span>Revenue (7d)</span></div>
-          </div>
-          <div class="card-header">
-            <h3>Report for this week</h3>
-            <div class="tabs">
-              <button type="button" class="tab-btn active" id="dash-tab-week">This week</button>
-              <button type="button" class="tab-btn" id="dash-tab-prev" disabled>Last week</button>
-            </div>
-          </div>
-          <div class="card-body chart-container">
-            <canvas id="weekly-chart"></canvas>
-          </div>
-        </div>
-
         <div class="dash-right-stack">
           <div class="card">
             <div class="card-header">
-              <h3>Users in last 30 minutes</h3>
+              <h3>AR Sessions in the last 30 minutes</h3>
             </div>
             <div class="card-body">
               <div class="stat-card-value mb-1" id="dash-users-val">0</div>
@@ -331,28 +263,6 @@ window.Dashboard = (() => {
               <div class="dash-mini-chart-wrap">
                 <canvas id="dash-users-chart"></canvas>
               </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <h3>Sales by country</h3>
-            </div>
-            <div class="card-body">
-              <div class="dash-country-list">
-                <div class="dash-country-row">
-                  <span>Philippines</span><span class="fw-600">45%</span>
-                  <div class="dash-country-bar"><span style="width:45%"></span></div>
-                </div>
-                <div class="dash-country-row">
-                  <span>United States</span><span class="fw-600">30%</span>
-                  <div class="dash-country-bar"><span style="width:30%"></span></div>
-                </div>
-                <div class="dash-country-row">
-                  <span>Other</span><span class="fw-600">25%</span>
-                  <div class="dash-country-bar"><span style="width:25%"></span></div>
-                </div>
-              </div>
-              <p class="text-xs text-muted mt-2">Illustrative split — connect country fields on orders to replace.</p>
             </div>
           </div>
           <div class="card">
@@ -379,34 +289,9 @@ window.Dashboard = (() => {
           </div>
         </div>
 
-        <div class="card dash-trans-card">
-          <div class="table-toolbar">
-            <h3>Recent transactions</h3>
-            <div class="table-toolbar-right">
-              <a href="#/transactions" class="btn btn-outline btn-sm">View all</a>
-            </div>
-          </div>
-          <div class="table-wrap" style="border:none;box-shadow:none;border-radius:0;">
-            <table>
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>Customer ID</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody id="dash-tx-table">
-                <tr><td colspan="5" class="empty-state">Loading…</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
         <div class="card dash-best-card">
           <div class="table-toolbar">
-            <h3>Best selling products</h3>
+            <h3>Most viewed items in AR</h3>
           </div>
           <div class="table-wrap" style="border:none;box-shadow:none;border-radius:0;">
             <table>
