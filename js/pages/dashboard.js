@@ -295,7 +295,7 @@ window.Dashboard = (() => {
               <thead>
                 <tr>
                   <th>Product</th>
-                  <th>Total order</th>
+                  <th>Total</th>
                   <th>Status</th>
                   <th>Price</th>
                 </tr>
