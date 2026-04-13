@@ -148,8 +148,6 @@ window.Customers = (() => {
           <td onclick="event.stopPropagation()"><input type="checkbox" /></td>
           <td class="fw-600 text-text">${n}</td>
           <td>${u.phoneNumber || u.phone || '--'}</td>
-          <td>${oCount}</td>
-          <td class="fw-600">₱ ${tot.toFixed(2)}</td>
         </tr>
       `;
     }).join('');
