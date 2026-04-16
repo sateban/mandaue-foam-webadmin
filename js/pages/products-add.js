@@ -28,7 +28,7 @@ window.ProductsAdd = (() => {
       if(sel) {
         if (cats && cats.length > 0) {
           sel.innerHTML = '<option value="">Select a category</option>' +
-            cats.map(c => `<option value="${c.id}" ${product?.category === c.id ? 'selected':''}>${c.name}</option>`).join('');
+            cats.map(c => `<option value="${c.name}" ${product?.category === c.id ? 'selected':''}>${c.name}</option>`).join('');
         } else {
           sel.innerHTML = '<option value="">No categories available</option>';
         }
