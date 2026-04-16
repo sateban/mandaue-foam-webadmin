@@ -12,29 +12,45 @@ window.ProductsAdd = (() => {
     const isEdit = !!product;
     editId = isEdit ? product.id : null;
     
-    document.getElementById('pa-name').value = product?.name || '';
-    document.getElementById('pa-desc').value = product?.description || '';
-    document.getElementById('pa-price').value = product?.price || '';
-    document.getElementById('pa-discount').value = parseFloat(product?.discount || 0);
-    document.getElementById('pa-qty').value = product?.quantity || '0';
-    document.getElementById('pa-stock').checked = product?.inStock ?? true;
-    document.getElementById('pa-feat').checked = product?.isFavorite ?? false;
+    // Safely set form values with existence checks
+    const el = (id) => document.getElementById(id);
+    if(el('pa-name')) el('pa-name').value = product?.name || '';
+    if(el('pa-desc')) el('pa-desc').value = product?.description || '';
+    if(el('pa-price')) el('pa-price').value = product?.price || '';
+    if(el('pa-discount')) el('pa-discount').value = parseFloat(product?.discount || 0);
+    if(el('pa-qty')) el('pa-qty').value = product?.quantity || '0';
+    if(el('pa-stock')) el('pa-stock').checked = product?.inStock ?? true;
+    if(el('pa-feat')) el('pa-feat').checked = product?.isFavorite ?? false;
 
     // Load categories
     FirebaseService.readList('categories').then(cats => {
       const sel = document.getElementById('pa-cat');
       if(sel) {
-        sel.innerHTML = '<option value="">Select a category</option>' +
-          cats.map(c => `<option value="${c.id}" ${product?.category === c.id ? 'selected':''}>${c.name}</option>`).join('');
+        if (cats && cats.length > 0) {
+          sel.innerHTML = '<option value="">Select a category</option>' +
+            cats.map(c => `<option value="${c.id}" ${product?.category === c.id ? 'selected':''}>${c.name}</option>`).join('');
+        } else {
+          sel.innerHTML = '<option value="">No categories available</option>';
+        }
       }
+    }).catch(err => {
+      console.error('Failed to load categories:', err);
+      const sel = document.getElementById('pa-cat');
+      if(sel) {
+        sel.innerHTML = '<option value="">Error loading categories</option>';
+      }
+      Toast.error('Failed to load categories');
     });
 
     if (isEdit) {
-      document.getElementById('pa-title').textContent = 'Edit Product';
+      const titleEl = document.getElementById('pa-title');
+      if(titleEl) titleEl.textContent = 'Edit Product';
+      
       if (product.imageUrl) {
         const u = FilebaseService.publicUrl(product.imageUrl);
         imgPreview = null; // Don't re-upload unless changed
-        document.getElementById('img-drop-area').innerHTML = `<img src="${u}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r-sm)" />`;
+        const imgArea = document.getElementById('img-drop-area');
+        if(imgArea) imgArea.innerHTML = `<img src="${u}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r-sm)" />`;
       }
       if (product.modelUrl) {
         const u = FilebaseService.publicUrl(product.modelUrl);
@@ -105,6 +121,10 @@ window.ProductsAdd = (() => {
               <div class="form-group">
                 <label class="form-label">Discount (%)</label>
                 <input type="number" id="pa-discount" class="input" placeholder="e.g. 10" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quantity</label>
+                <input type="number" id="pa-qty" class="input" min="0" placeholder="0" />
               </div>
               <div class="form-group" style="justify-content:center;padding-top:20px">
                 <label class="form-toggle">
@@ -278,9 +298,19 @@ window.ProductsAdd = (() => {
     btn.disabled = true; btn.textContent = 'Saving...';
 
     try {
-      // Validate
-      const name = document.getElementById('pa-name').value.trim();
-      const price = parseFloat(document.getElementById('pa-price').value) || 0;
+      // Validate - with null checks
+      const nameEl = document.getElementById('pa-name');
+      const priceEl = document.getElementById('pa-price');
+      const descEl = document.getElementById('pa-desc');
+      const catEl = document.getElementById('pa-cat');
+      const qtyEl = document.getElementById('pa-qty');
+      const stockEl = document.getElementById('pa-stock');
+      const featEl = document.getElementById('pa-feat');
+      
+      if (!nameEl || !priceEl) throw new Error('Form elements not found');
+      
+      const name = nameEl.value.trim();
+      const price = parseFloat(priceEl.value) || 0;
       if(!name) throw new Error('Product Name is required');
       if(price <= 0) throw new Error('Valid base price is required');
 
@@ -302,18 +332,18 @@ window.ProductsAdd = (() => {
       btn.textContent = 'Writing Database...';
       const id = editId || FirebaseService.newKey('products');
 
-      const disc = parseFloat(document.getElementById('pa-discount').value) || 0;
+      const disc = parseFloat(document.getElementById('pa-discount')?.value || '0') || 0;
       const discStr = disc > 0 ? disc + '%' : '0';
 
       const updatePayload = {
         name,
         price,
-        description: document.getElementById('pa-desc').value.trim(),
-        category: document.getElementById('pa-cat').value,
-        quantity: parseInt(document.getElementById('pa-qty').value) || 0,
-        inStock: document.getElementById('pa-stock').checked,
+        description: descEl?.value.trim() || '',
+        category: catEl?.value || '',
+        quantity: parseInt(qtyEl?.value || '0') || 0,
+        inStock: !!stockEl?.checked,
         discount: discStr,
-        isFavorite: document.getElementById('pa-feat').checked,
+        isFavorite: !!featEl?.checked,
         status: status
       };
 
