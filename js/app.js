@@ -19,7 +19,8 @@ const App = (() => {
   let sidebarNavBound = false;
 
   async function handleRoute() {
-    let path = window.location.hash.slice(1) || '/dashboard';
+    let fullPath = window.location.hash.slice(1) || '/dashboard';
+    let path = fullPath.split('?')[0]; // Extract route path without query params
     
     // Auth check
     const user = FirebaseService.currentUser();

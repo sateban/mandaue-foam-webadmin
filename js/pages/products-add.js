@@ -8,7 +8,7 @@ window.ProductsAdd = (() => {
   const PRODUCT_MODEL_FOLDER = 'model-assets/products';
   const PRODUCT_IMAGE_FOLDER = 'image-assets/products';
 
-  function initMap(product = null) {
+  async function initMap(product = null) {
     const isEdit = !!product;
     editId = isEdit ? product.id : null;
     
@@ -47,14 +47,25 @@ window.ProductsAdd = (() => {
       if(titleEl) titleEl.textContent = 'Edit Product';
       
       if (product.imageUrl) {
-        const u = FilebaseService.publicUrl(product.imageUrl);
-        imgPreview = null; // Don't re-upload unless changed
-        const imgArea = document.getElementById('img-drop-area');
-        if(imgArea) imgArea.innerHTML = `<img src="${u}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r-sm)" />`;
+        try {
+          const u = await FilebaseService.resolvePublicReadUrl(product.imageUrl);
+          imgPreview = null; // Don't re-upload unless changed
+          const imgArea = document.getElementById('img-drop-area');
+          if(imgArea) imgArea.innerHTML = `<img src="${u}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r-sm)" />`;
+        } catch (e) {
+          console.error('Failed to load image:', e);
+        }
       }
       if (product.modelUrl) {
-        const u = FilebaseService.publicUrl(product.modelUrl);
-        if (viewer) viewer.loadUrl(u).catch(e => console.error('Model load err:', e));
+        try {
+          const u = await FilebaseService.resolvePublicReadUrl(product.modelUrl);
+          if (viewer) {
+            viewer.clear();
+            viewer.loadUrl(u).catch(e => console.error('Model load err:', e));
+          }
+        } catch (e) {
+          console.error('Failed to load model URL:', e);
+        }
       }
     }
   }
@@ -184,8 +195,8 @@ window.ProductsAdd = (() => {
     // Load data if edit
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
     if (hashParams.has('id')) {
-      FirebaseService.read(`products/${hashParams.get('id')}`).then(p => {
-        if(p) initMap({ id: hashParams.get('id'), ...p });
+      FirebaseService.read(`products/${hashParams.get('id')}`).then(async p => {
+        if(p) await initMap({ id: hashParams.get('id'), ...p });
       }).catch(e => Toast.error(e.message));
     } else {
       initMap(null); // Create new
