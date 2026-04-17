@@ -4,6 +4,9 @@ window.ProductsList = (() => {
   let products = [];
   let categories = {};
   let imageUrlsByProductId = {};
+  let activeStatusFilter = 'all';
+  let activeSearchQuery = '';
+  let activeStockFilter = 'all';
 
   function mount(container) {
     container.innerHTML = `
@@ -18,16 +21,16 @@ window.ProductsList = (() => {
       <div class="card">
         <div class="table-toolbar">
           <div class="tabs">
-            <button class="tab-btn active">All Product <span class="tab-count" id="count-all">0</span></button>
-            <button class="tab-btn">Published</button>
-            <button class="tab-btn">Draft</button>
+            <button class="tab-btn active" data-status="all">All Product <span class="tab-count" id="count-all">0</span></button>
+            <button class="tab-btn" data-status="published">Published</button>
+            <button class="tab-btn" data-status="draft">Draft</button>
           </div>
           <div class="table-toolbar-right">
             <div class="search-input-wrap">
               <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               <input type="text" id="pl-search" placeholder="Search product..." />
             </div>
-            <button class="btn btn-outline btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg></button>
+            <button id="pl-filter-btn" class="btn btn-outline btn-icon" title="Filter: All stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg></button>
           </div>
         </div>
         <div class="table-wrap" style="border:none;box-shadow:none;border-radius:0;">
@@ -58,6 +61,59 @@ window.ProductsList = (() => {
     `;
 
     loadMap();
+    setupTabFilters();
+    setupSearchFilter();
+    setupStockFilter();
+  }
+
+  function setupTabFilters() {
+    const tabButtons = document.querySelectorAll('.tab-btn[data-status]');
+    if (!tabButtons.length) return;
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const nextStatus = btn.dataset.status || 'all';
+        activeStatusFilter = nextStatus;
+
+        tabButtons.forEach(tab => tab.classList.remove('active'));
+        btn.classList.add('active');
+        renderTable();
+      });
+    });
+  }
+
+  function setupSearchFilter() {
+    const searchInput = document.getElementById('pl-search');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', () => {
+      activeSearchQuery = searchInput.value.trim().toLowerCase();
+      renderTable();
+    });
+  }
+
+  function setupStockFilter() {
+    const filterBtn = document.getElementById('pl-filter-btn');
+    if (!filterBtn) return;
+
+    const labels = {
+      all: 'All stock',
+      in_stock: 'In stock only',
+      out_of_stock: 'Out of stock only'
+    };
+
+    filterBtn.addEventListener('click', () => {
+      if (activeStockFilter === 'all') {
+        activeStockFilter = 'in_stock';
+      } else if (activeStockFilter === 'in_stock') {
+        activeStockFilter = 'out_of_stock';
+      } else {
+        activeStockFilter = 'all';
+      }
+
+      filterBtn.title = `Filter: ${labels[activeStockFilter]}`;
+      renderTable();
+    });
   }
 
   async function loadMap() {
@@ -80,14 +136,33 @@ window.ProductsList = (() => {
     if (!tbody) return;
 
     document.getElementById('count-all').textContent = products.length;
-    document.getElementById('pl-showing').textContent = `Showing ${products.length} entries`;
+    const filteredProducts = activeStatusFilter === 'all'
+      ? products
+      : products.filter(p => (p.status || 'published') === activeStatusFilter);
+    const searchedProducts = !activeSearchQuery
+      ? filteredProducts
+      : filteredProducts.filter(p => {
+          const name = (p.name || '').toLowerCase();
+          const categoryLabel = (categories[p.category] || p.category || '').toLowerCase();
+          const color = (p.color || '').toLowerCase();
+          return name.includes(activeSearchQuery) ||
+            categoryLabel.includes(activeSearchQuery) ||
+            color.includes(activeSearchQuery);
+        });
+    const stockFilteredProducts = activeStockFilter === 'all'
+      ? searchedProducts
+      : searchedProducts.filter(p => {
+          const inStock = !!p.inStock && Number(p.quantity || 0) > 0;
+          return activeStockFilter === 'in_stock' ? inStock : !inStock;
+        });
+    document.getElementById('pl-showing').textContent = `Showing ${stockFilteredProducts.length} entries`;
 
-    if (products.length === 0) {
+    if (stockFilteredProducts.length === 0) {
       tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No products found.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = products.map(p => {
+    tbody.innerHTML = stockFilteredProducts.map(p => {
       const catStr = categories[p.category] || p.category || 'Uncategorized';
       const img = imageUrlsByProductId[p.id] || (p.imageUrl ? FilebaseService.publicUrl(p.imageUrl) : '');
       const statCls = p.status === 'draft' ? 'badge-neutral' : 'badge-success';
