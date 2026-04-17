@@ -794,6 +794,7 @@ window.ProductsAdd = (() => {
 
       // Build clean variation payload without _hex and with sanitized keys
       let cleanVariations = {};
+      let missingVariationColors = {};
       if (Object.keys(colorVariations).length > 0) {
         Object.entries(colorVariations).forEach(([colorName, colorData]) => {
           const sanitizedKey = sanitizeFirebaseKey(colorName);
@@ -801,7 +802,19 @@ window.ProductsAdd = (() => {
             imageUrl: colorData.imageUrl || "",
             modelUrl: colorData.modelUrl || ""
           };
+
+          // Auto-register variation colors to shared color presets
+          const variationHex = (colorData?._hex || '').toUpperCase();
+          if (variationHex && !(sanitizedKey in availableColors)) {
+            missingVariationColors[sanitizedKey] = variationHex;
+            availableColors[sanitizedKey] = variationHex;
+          }
         });
+      }
+
+      if (Object.keys(missingVariationColors).length > 0) {
+        btn.textContent = 'Updating Color Presets...';
+        await FirebaseService.update('colors', missingVariationColors);
       }
 
       // Upload variation assets and enforce publish validation
