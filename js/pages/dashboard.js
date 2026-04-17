@@ -259,7 +259,7 @@ window.Dashboard = (() => {
             </div>
             <div class="card-body">
               <div class="stat-card-value mb-1" id="dash-users-val">0</div>
-              <div class="text-xs text-muted">Orders placed in the last 30 minutes (activity proxy)</div>
+              <div class="text-xs text-muted">AR sessions in the last 30 minutes (activity proxy)</div>
             </div>
           </div>
           <div class="card">
@@ -275,11 +275,6 @@ window.Dashboard = (() => {
               <h3>Add new product</h3>
             </div>
             <div class="card-body">
-              <div class="dash-cat-chips">
-                <span class="chip">Electronic</span>
-                <span class="chip">Fashion</span>
-                <span class="chip">Home</span>
-              </div>
               <div class="dash-quick-list" id="dash-quick-list"></div>
               <a href="#/products-add" class="btn btn-primary w-full mt-2" style="justify-content:center;">Add product</a>
             </div>
