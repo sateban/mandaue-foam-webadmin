@@ -98,6 +98,7 @@ window.ProductsAdd = (() => {
   let isCustomColor = false; // flag for custom color vs preset
   let colorVariations = {}; // color variations: { colorName: { imageUrl, modelUrl } }
   let availableColors = {}; // all available colors from database
+  let variationUploadBindingsReady = false;
   const PRODUCT_MODEL_FOLDER = 'model-assets/products';
   const PRODUCT_IMAGE_FOLDER = 'image-assets/products';
 
@@ -123,7 +124,7 @@ window.ProductsAdd = (() => {
       if(colorSel) {
         colorSel.innerHTML = '<option value="">Select a color</option>' +
           Object.keys(availableColors).map(c => `<option value="${c}" ${product?.color === c ? 'selected':''}>${c}</option>`).join('');
-      }
+
       if (product?.color) {
         // Check if color is a preset (either from availableColors or COLOR_NAMES_DB)
         const isPresetFromDb = product.color in availableColors;
@@ -166,6 +167,7 @@ window.ProductsAdd = (() => {
         if(colorPicker && selectedColorHex) colorPicker.value = selectedColorHex;
         setTimeout(() => updateColorVariationsUI(), 100);  // Delay to ensure DOM is ready
       }
+    }
     } catch (err) {
       console.error('Failed to load colors:', err);
       Toast.warn('Failed to load colors');
@@ -583,9 +585,69 @@ window.ProductsAdd = (() => {
     customTab.style.display = tab === 'custom' ? 'block' : 'none';
   }
 
+  function getSafeDomId(value) {
+    return encodeURIComponent(value).replace(/%/g, '_');
+  }
+
+  function bindVariationUploadHandlers() {
+    if (variationUploadBindingsReady) return;
+    const container = document.getElementById('pa-color-variations');
+    if (!container) return;
+
+    container.addEventListener('change', (e) => {
+      const target = e.target;
+      if (!target || !(target instanceof HTMLInputElement)) return;
+      const variationKey = target.dataset.variation ? decodeURIComponent(target.dataset.variation) : '';
+      if (!variationKey || !colorVariations[variationKey]) return;
+
+      const file = target.files?.[0];
+      if (!file) return;
+
+      if (target.dataset.type === 'image') {
+        if (!file.type || !file.type.startsWith('image/')) {
+          Toast.error('Please select a valid image file for the variation.');
+          target.value = '';
+          return;
+        }
+        colorVariations[variationKey]._imageFile = file;
+        colorVariations[variationKey].imageUrl = '';
+        Toast.success(`Image selected for ${variationKey}`);
+      } else if (target.dataset.type === 'model') {
+        if (!file.name.match(/\.(glb|gltf|obj)$/i)) {
+          Toast.error('Please select a valid 3D model (.glb, .gltf, .obj) for the variation.');
+          target.value = '';
+          return;
+        }
+        colorVariations[variationKey]._modelFile = file;
+        colorVariations[variationKey].modelUrl = '';
+        Toast.success(`3D model selected for ${variationKey}`);
+      }
+      updateColorVariationsUI();
+    });
+
+    variationUploadBindingsReady = true;
+  }
+
+  function pickVariationFile(variationName, type) {
+    const safeId = getSafeDomId(variationName);
+    const input = document.getElementById(`pa-variation-${type}-${safeId}`);
+    if (input) input.click();
+  }
+
+  function variationAssetStatus(variationData) {
+    const hasImage = !!(variationData.imageUrl || variationData._imageFile);
+    const hasModel = !!(variationData.modelUrl || variationData._modelFile);
+    return {
+      hasImage,
+      hasModel,
+      label: `Image: ${hasImage ? 'Ready' : 'Missing'} | 3D: ${hasModel ? 'Ready' : 'Missing'}`
+    };
+  }
+
   function updateColorVariationsUI() {
     const container = document.getElementById('pa-color-variations');
     if (!container) return;
+    bindVariationUploadHandlers();
 
     if (!selectedColor) {
       container.innerHTML = '<p style="margin:0;color:var(--text-muted);font-size:0.9rem">Select primary color first</p>';
@@ -602,13 +664,23 @@ window.ProductsAdd = (() => {
     let html = '<div style="display:flex;flex-direction:column;gap:8px">';
     variations.forEach(([colorName, colorData]) => {
       const colorHex = colorData._hex || '#808080'; // Use internal _hex for display only
+      const safeColorId = getSafeDomId(colorName);
+      const variationKey = encodeURIComponent(colorName);
+      const status = variationAssetStatus(colorData);
       
       html += `
-        <div style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--r-sm);background:var(--primary-light);border:1px solid var(--primary)">
-          <div style="width:24px;height:24px;border-radius:50%;border:2px solid var(--border);background:${colorHex};flex-shrink:0"></div>
-          <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:flex-start;gap:8px;padding:10px;border-radius:var(--r-sm);background:var(--primary-light);border:1px solid var(--primary)">
+          <div style="width:24px;height:24px;border-radius:50%;border:2px solid var(--border);background:${colorHex};flex-shrink:0;margin-top:2px"></div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
             <div style="font-size:0.9rem;font-weight:600">${colorName}</div>
             <div style="font-size:0.8rem;color:var(--text-muted)">${colorHex}</div>
+            <div style="font-size:0.78rem;color:${status.hasImage && status.hasModel ? 'var(--success)' : 'var(--warning)'}">${status.label}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button type="button" class="btn btn-sm" style="padding:4px 8px;font-size:0.75rem" onclick="window.ProductsAdd.pickVariationFile('${colorName.replace(/'/g, "\\'")}', 'image')">${colorData._imageFile ? 'Replace' : 'Upload'} Image</button>
+              <button type="button" class="btn btn-sm" style="padding:4px 8px;font-size:0.75rem" onclick="window.ProductsAdd.pickVariationFile('${colorName.replace(/'/g, "\\'")}', 'model')">${colorData._modelFile ? 'Replace' : 'Upload'} 3D</button>
+            </div>
+            <input type="file" id="pa-variation-image-${safeColorId}" data-variation="${variationKey}" data-type="image" accept="image/*" class="hidden" />
+            <input type="file" id="pa-variation-model-${safeColorId}" data-variation="${variationKey}" data-type="model" accept=".glb,.gltf,.obj" class="hidden" />
           </div>
           <button type="button" onclick="window.ProductsAdd.removeColorVariation('${colorName.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;font-size:1.2rem" title="Remove">×</button>
         </div>
@@ -724,15 +796,39 @@ window.ProductsAdd = (() => {
       let cleanVariations = {};
       if (Object.keys(colorVariations).length > 0) {
         Object.entries(colorVariations).forEach(([colorName, colorData]) => {
-          // Skip if this variation is the same as the primary color
-          if (colorName === customColorName) return;
-          
           const sanitizedKey = sanitizeFirebaseKey(colorName);
           cleanVariations[sanitizedKey] = {
             imageUrl: colorData.imageUrl || "",
             modelUrl: colorData.modelUrl || ""
           };
         });
+      }
+
+      // Upload variation assets and enforce publish validation
+      if (Object.keys(colorVariations).length > 0) {
+        btn.textContent = 'Uploading Variation Assets...';
+        for (const [colorName, colorData] of Object.entries(colorVariations)) {
+          const sanitizedKey = sanitizeFirebaseKey(colorName);
+          const cleanVariation = cleanVariations[sanitizedKey];
+          if (!cleanVariation) continue;
+
+          if (colorData._imageFile) {
+            const variationImageUpload = await FilebaseService.uploadFile(colorData._imageFile, PRODUCT_IMAGE_FOLDER);
+            cleanVariation.imageUrl = variationImageUpload.key;
+            colorData.imageUrl = variationImageUpload.key;
+            delete colorData._imageFile;
+          }
+          if (colorData._modelFile) {
+            const variationModelUpload = await FilebaseService.uploadFile(colorData._modelFile, PRODUCT_MODEL_FOLDER);
+            cleanVariation.modelUrl = variationModelUpload.key;
+            colorData.modelUrl = variationModelUpload.key;
+            delete colorData._modelFile;
+          }
+
+          if (status === 'published' && (!cleanVariation.imageUrl || !cleanVariation.modelUrl)) {
+            throw new Error(`Variation "${colorName}" must have both image and 3D model before publishing`);
+          }
+        }
       }
 
       const updatePayload = {
@@ -792,7 +888,8 @@ window.ProductsAdd = (() => {
     customColorName = null;
     isCustomColor = false;
     colorVariations = {};
+    variationUploadBindingsReady = false;
   }
 
-  return { mount, unmount, toggleWireframe, resetCam, saveProduct, setColor, setCustomColor, setColorName, switchColorTab, addColorVariation, removeColorVariation };
+  return { mount, unmount, toggleWireframe, resetCam, saveProduct, setColor, setCustomColor, setColorName, switchColorTab, addColorVariation, removeColorVariation, pickVariationFile };
 })();

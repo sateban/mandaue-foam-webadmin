@@ -5,12 +5,15 @@ window.Customers = (() => {
   let allUsers = [];
   let selectedUid = null;
   let activeRange = 'this-week';
+  let activeTab = 'all';
+  let searchTerm = '';
+  let selectedUids = new Set();
 
   function mount(container) {
     container.innerHTML = `
       <div class="page-header">
         <h1>Customers</h1>
-        <button class="btn btn-outline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Export CSV</button>
+        <button class="btn btn-outline" id="c-export-all"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Export CSV</button>
       </div>
 
       <div class="customer-insight-grid">
@@ -54,21 +57,27 @@ window.Customers = (() => {
         <div class="card flex-col" style="flex:1">
           <div class="table-toolbar">
             <div class="tabs">
-              <button class="tab-btn active">All Customers <span class="tab-count" id="c-all-cnt">0</span></button>
-              <button class="tab-btn">Active</button>
+              <button class="tab-btn active" data-tab="all">All Customers <span class="tab-count" id="c-all-cnt">0</span></button>
+              <button class="tab-btn" data-tab="active">Active <span class="tab-count" id="c-active-cnt">0</span></button>
             </div>
             <div class="search-input-wrap">
               <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <input type="text" placeholder="Search..." />
+              <input type="text" placeholder="Search..." id="c-search-input" />
             </div>
+          </div>
+          <div id="c-bulk-actions" class="flex items-center justify-between px-4 py-2 text-sm" style="display:none;border-bottom:1px solid rgba(0,0,0,0.06);">
+            <span id="c-selected-count">0 selected</span>
+            <button class="btn btn-outline" id="c-export-selected">Export Selected CSV</button>
           </div>
           <div class="table-wrap" style="border:none;box-shadow:none;border-radius:0;">
             <table>
               <thead>
                 <tr>
-                  <th width="40"><input type="checkbox" /></th>
+                  <th width="40"><input type="checkbox" id="c-select-all" /></th>
                   <th>Customer Name</th>
                   <th>Phone No.</th>
+                  <th>Address</th>
+                  <th>Auth Provider</th>
                 </tr>
               </thead>
               <tbody id="c-table">
@@ -103,6 +112,7 @@ window.Customers = (() => {
     `;
 
     bindRangeEvents(container);
+    bindTableEvents(container);
     load();
   }
 
@@ -120,43 +130,99 @@ window.Customers = (() => {
   function load() {
     unsub = FirebaseService.stream('users', data => {
       allUsers = data ? Object.entries(data).map(([uid, u]) => ({ uid, ...u })) : [];
+      selectedUids = new Set([...selectedUids].filter(uid => allUsers.some(u => u.uid === uid)));
       renderTable();
     });
+  }
+
+  function bindTableEvents(container) {
+    const tabs = container.querySelectorAll('.tab-btn[data-tab]');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeTab = btn.dataset.tab || 'all';
+        tabs.forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        renderTable();
+      });
+    });
+
+    const searchInput = container.querySelector('#c-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchTerm = (e.target.value || '').trim().toLowerCase();
+        renderTable();
+      });
+    }
+
+    const exportAllBtn = container.querySelector('#c-export-all');
+    if (exportAllBtn) exportAllBtn.addEventListener('click', () => exportCsv(getFilteredUsers()));
+
+    const exportSelectedBtn = container.querySelector('#c-export-selected');
+    if (exportSelectedBtn) {
+      exportSelectedBtn.addEventListener('click', () => {
+        const selectedUsers = getFilteredUsers().filter(u => selectedUids.has(u.uid));
+        exportCsv(selectedUsers);
+      });
+    }
+
+    const selectAll = container.querySelector('#c-select-all');
+    if (selectAll) {
+      selectAll.addEventListener('change', (e) => {
+        const users = getFilteredUsers();
+        if (e.target.checked) users.forEach(u => selectedUids.add(u.uid));
+        else users.forEach(u => selectedUids.delete(u.uid));
+        renderTable();
+      });
+    }
   }
 
   function renderTable() {
     const tb = document.getElementById('c-table');
     if (!tb) return;
-    document.getElementById('c-all-cnt').textContent = allUsers.length;
+    const filteredUsers = getFilteredUsers();
+    const activeUsers = allUsers.filter(u => isActiveCustomer(u));
+    setText('c-all-cnt', allUsers.length);
+    setText('c-active-cnt', activeUsers.length);
 
-    if (allUsers.length === 0) {
-      tb.innerHTML = `<tr><td colspan="5" class="empty-state">No customers recorded.</td></tr>`;
+    if (filteredUsers.length === 0) {
+      tb.innerHTML = `<tr><td colspan="6" class="empty-state">${searchTerm ? 'No customers match your search.' : 'No customers recorded.'}</td></tr>`;
+      updateBulkActions(filteredUsers);
       return;
     }
 
-    tb.innerHTML = allUsers.map(u => {
+    tb.innerHTML = filteredUsers.map(u => {
       const n = u.name || u.displayName || 'No Name';
-      const oCount = u.orders ? Object.keys(u.orders).length : 0;
-      
-      let tot = 0;
-      if (u.orders) {
-        Object.values(u.orders).forEach(o => { tot += parseFloat(o.totalPrice||o.totalAmount||0); });
-      }
+      const address = getPrimaryAddress(u);
+      const provider = resolveAuthProvider(u);
+      const isChecked = selectedUids.has(u.uid) ? 'checked' : '';
 
       return `
         <tr style="cursor:pointer" onclick="window.Customers.select('${u.uid}')">
-          <td onclick="event.stopPropagation()"><input type="checkbox" /></td>
+          <td onclick="event.stopPropagation()"><input type="checkbox" data-uid="${u.uid}" ${isChecked} /></td>
           <td class="fw-600 text-text">${n}</td>
           <td>${u.phoneNumber || u.phone || '--'}</td>
+          <td title="${escapeHtml(address)}">${address}</td>
+          <td>${provider}</td>
         </tr>
       `;
     }).join('');
+
+    tb.querySelectorAll('input[type="checkbox"][data-uid]').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const uid = e.target.dataset.uid;
+        if (!uid) return;
+        if (e.target.checked) selectedUids.add(uid);
+        else selectedUids.delete(uid);
+        updateBulkActions(filteredUsers);
+      });
+    });
     
     // Auto select first or preserve previous selection
-    const selectedExists = selectedUid && allUsers.some(u => u.uid === selectedUid);
+    const selectedExists = selectedUid && filteredUsers.some(u => u.uid === selectedUid);
     if (selectedExists) selectRow(selectedUid);
-    else if(allUsers.length > 0) selectRow(allUsers[0].uid);
+    else if(filteredUsers.length > 0) selectRow(filteredUsers[0].uid);
 
+    updateBulkActions(filteredUsers);
     renderInsights();
   }
 
@@ -183,9 +249,9 @@ window.Customers = (() => {
       });
     }
     
-    document.getElementById('cd-total').textContent = total;
-    document.getElementById('cd-done').textContent = done;
-    document.getElementById('cd-cancel').textContent = cancel;
+    setText('cd-total', total);
+    setText('cd-done', done);
+    setText('cd-cancel', cancel);
 
     // First address
     let adrStr = 'No address recorded';
@@ -374,6 +440,110 @@ window.Customers = (() => {
   function setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
+  }
+
+  function getFilteredUsers() {
+    let rows = activeTab === 'active'
+      ? allUsers.filter(u => isActiveCustomer(u))
+      : [...allUsers];
+
+    if (searchTerm) rows = rows.filter(u => matchesSearch(u, searchTerm));
+    return rows;
+  }
+
+  function isActiveCustomer(user) {
+    if (user.isActive === true) return true;
+    if (user.lastLogin || user.lastSeen || user.lastActiveAt) return true;
+    return !!(user.orders && Object.keys(user.orders).length > 0);
+  }
+
+  function matchesSearch(user, term) {
+    const haystack = [
+      user.uid,
+      user.name,
+      user.displayName,
+      user.email,
+      user.phone,
+      user.phoneNumber,
+      getPrimaryAddress(user),
+      resolveAuthProvider(user)
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(term);
+  }
+
+  function getPrimaryAddress(user) {
+    if (user.address && typeof user.address === 'string') return user.address;
+    if (!user.addresses || typeof user.addresses !== 'object') return '--';
+    const first = Object.values(user.addresses)[0];
+    if (!first || typeof first !== 'object') return '--';
+    const out = [first.street, first.barangay, first.city, first.province, first.zipcode].filter(Boolean).join(', ');
+    return out || '--';
+  }
+
+  function resolveAuthProvider(user) {
+    if (user.authProvider) return String(user.authProvider);
+    if (user.provider) return String(user.provider);
+    if (user.providerId) return String(user.providerId);
+    if (Array.isArray(user.providers) && user.providers.length > 0) {
+      const first = user.providers[0];
+      if (typeof first === 'string') return first;
+      if (first && first.providerId) return first.providerId;
+    }
+    return 'password';
+  }
+
+  function updateBulkActions(filteredUsers) {
+    const bulkWrap = document.getElementById('c-bulk-actions');
+    const count = filteredUsers.filter(u => selectedUids.has(u.uid)).length;
+    setText('c-selected-count', `${count} selected`);
+    if (bulkWrap) bulkWrap.style.display = count > 0 ? 'flex' : 'none';
+
+    const selectAll = document.getElementById('c-select-all');
+    if (selectAll) {
+      const allChecked = filteredUsers.length > 0 && filteredUsers.every(u => selectedUids.has(u.uid));
+      selectAll.checked = allChecked;
+      selectAll.indeterminate = count > 0 && !allChecked;
+    }
+  }
+
+  function exportCsv(users) {
+    if (!users || users.length === 0) return;
+    const headers = ['UID', 'Customer Name', 'Email', 'Phone', 'Address', 'Auth Provider', 'Total Orders'];
+    const rows = users.map(u => [
+      u.uid || '',
+      u.name || u.displayName || '',
+      u.email || '',
+      u.phoneNumber || u.phone || '',
+      getPrimaryAddress(u) === '--' ? '' : getPrimaryAddress(u),
+      resolveAuthProvider(u),
+      u.orders ? Object.keys(u.orders).length : 0
+    ]);
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function escapeHtml(text) {
+    return String(text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   function unmount() {
