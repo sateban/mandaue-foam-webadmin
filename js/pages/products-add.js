@@ -5,6 +5,9 @@ window.ProductsAdd = (() => {
   let imgPreview = null;    // currently selected IMG file for upload
   let editId = null;        // if editing
   let currentImgObjectUrl = null;
+  let selectedColor = null; // primary color
+  let colorVariations = {}; // color variations: { colorName: { imageUrl, modelUrl } }
+  let availableColors = {}; // all available colors from database
   const PRODUCT_MODEL_FOLDER = 'model-assets/products';
   const PRODUCT_IMAGE_FOLDER = 'image-assets/products';
 
@@ -21,6 +24,24 @@ window.ProductsAdd = (() => {
     if(el('pa-qty')) el('pa-qty').value = product?.quantity || '0';
     if(el('pa-stock')) el('pa-stock').checked = product?.inStock ?? true;
     if(el('pa-feat')) el('pa-feat').checked = product?.isFavorite ?? false;
+
+    // Load colors
+    try {
+      const colorsData = await FirebaseService.read('colors');
+      availableColors = colorsData || {};
+      const colorSel = document.getElementById('pa-color');
+      if(colorSel) {
+        colorSel.innerHTML = '<option value="">Select a color</option>' +
+          Object.keys(availableColors).map(c => `<option value="${c}" ${product?.color === c ? 'selected':''}>${c}</option>`).join('');
+      }
+      if (product?.color) {
+        selectedColor = product.color;
+        colorVariations = product?.variation || {};
+      }
+    } catch (err) {
+      console.error('Failed to load colors:', err);
+      Toast.warn('Failed to load colors');
+    }
 
     // Load categories
     FirebaseService.readList('categories').then(cats => {
@@ -180,6 +201,24 @@ window.ProductsAdd = (() => {
             </div>
           </div>
 
+          <div class="card">
+            <div class="card-header"><h3>Color Options</h3></div>
+            <div class="card-body form-group gap-4">
+              <div>
+                <label class="form-label">Primary Color</label>
+                <select id="pa-color" class="select mt-1" onchange="window.ProductsAdd.setColor(this.value)">
+                  <option value="">Loading colors...</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="margin-bottom:8px;display:block">Color Variations (other colors with different assets)</label>
+                <div id="pa-color-variations" style="border:1px solid var(--border);border-radius:var(--r-md);padding:12px;background:var(--bg-light)">
+                  <p style="margin:0;color:var(--text-muted);font-size:0.9rem">Select primary color first</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -303,6 +342,55 @@ window.ProductsAdd = (() => {
   function toggleWireframe() { wireframeOn = !wireframeOn; if(viewer) viewer.setWireframe(wireframeOn); }
   function resetCam() { if(viewer) viewer.resetCamera(); }
 
+  function setColor(color) {
+    selectedColor = color;
+    updateColorVariationsUI();
+  }
+
+  function updateColorVariationsUI() {
+    const container = document.getElementById('pa-color-variations');
+    if (!container) return;
+
+    if (!selectedColor) {
+      container.innerHTML = '<p style="margin:0;color:var(--text-muted);font-size:0.9rem">Select primary color first</p>';
+      return;
+    }
+
+    // Get all available colors except the primary color
+    const otherColors = Object.keys(availableColors).filter(c => c !== selectedColor);
+
+    if (otherColors.length === 0) {
+      container.innerHTML = '<p style="margin:0;color:var(--text-muted);font-size:0.9rem">No other colors available</p>';
+      return;
+    }
+
+    let html = '<div style="display:flex;flex-direction:column;gap:8px">';
+    otherColors.forEach(color => {
+      const isSelected = !!colorVariations[color];
+      html += `
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border-radius:var(--r-sm);background:${isSelected ? 'var(--primary-light)' : 'transparent'}">
+          <input type="checkbox" id="pa-var-${color}" ${isSelected ? 'checked' : ''} onchange="window.ProductsAdd.toggleColorVariation('${color}')" style="cursor:pointer" />
+          <span style="font-size:0.9rem">${color}</span>
+          <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);background:${availableColors[color]};margin-left:auto"></div>
+        </label>
+      `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function toggleColorVariation(color) {
+    if (colorVariations[color]) {
+      delete colorVariations[color];
+    } else {
+      colorVariations[color] = {
+        imageUrl: null,
+        modelUrl: null
+      };
+    }
+    updateColorVariationsUI();
+  }
+
   async function saveProduct(status) {
     const btn = event.currentTarget;
     const origTxt = btn.textContent;
@@ -324,6 +412,7 @@ window.ProductsAdd = (() => {
       const price = parseFloat(priceEl.value) || 0;
       if(!name) throw new Error('Product Name is required');
       if(price <= 0) throw new Error('Valid base price is required');
+      if(!selectedColor) throw new Error('Product Color is required');
 
       let modelUrlRes = undefined;
       let imageUrlRes = undefined;
@@ -355,8 +444,13 @@ window.ProductsAdd = (() => {
         inStock: !!stockEl?.checked,
         discount: discStr,
         isFavorite: !!featEl?.checked,
-        status: status
+        status: status,
+        color: selectedColor
       };
+
+      if (Object.keys(colorVariations).length > 0) {
+        updatePayload.variation = colorVariations;
+      }
 
       if (modelUrlRes) updatePayload.modelUrl = modelUrlRes;
       if (imageUrlRes) updatePayload.imageUrl = imageUrlRes;
@@ -388,7 +482,9 @@ window.ProductsAdd = (() => {
     file3dPreview = null;
     imgPreview = null;
     editId = null;
+    selectedColor = null;
+    colorVariations = {};
   }
 
-  return { mount, unmount, toggleWireframe, resetCam, saveProduct };
+  return { mount, unmount, toggleWireframe, resetCam, saveProduct, setColor, toggleColorVariation };
 })();
