@@ -92,13 +92,17 @@ window.ProductsAdd = (() => {
   let imgPreview = null;    // currently selected IMG file for upload
   let editId = null;        // if editing
   let currentImgObjectUrl = null;
-  let selectedColor = null; // primary color
+  let selectedColor = null; // color being selected/edited
   let selectedColorHex = null; // hex code for custom colors
   let customColorName = null; // custom name for the selected color
   let isCustomColor = false; // flag for custom color vs preset
   let colorVariations = {}; // color variations: { colorName: { imageUrl, modelUrl } }
   let availableColors = {}; // all available colors from database
   let variationUploadBindingsReady = false;
+  // Main asset color assignment
+  let mainColorName = null; // color assigned to main image/3D model
+  let mainColorHex = null; // hex code for main color
+  let mainIsCustomColor = false; // whether main color is custom
   const PRODUCT_MODEL_FOLDER = 'model-assets/products';
   const PRODUCT_IMAGE_FOLDER = 'image-assets/products';
 
@@ -132,16 +136,14 @@ window.ProductsAdd = (() => {
         
         if (isPresetFromDb || isKnownPreset) {
           // It's a preset color
-          selectedColor = product.color;
-          isCustomColor = false;
-          selectedColorHex = null;
-          customColorName = product.color;
+          mainColorName = product.color;
+          mainIsCustomColor = false;
+          mainColorHex = null;
         } else {
           // Custom color - should have colorHex stored
-          selectedColor = product.color;
-          selectedColorHex = product?.colorHex || '#808080';
-          isCustomColor = true;
-          customColorName = product?.customColorName || getColorNameFromHex(selectedColorHex);
+          mainColorName = product.color;
+          mainColorHex = product?.colorHex || '#808080';
+          mainIsCustomColor = true;
         }
         
         // Load variations only if they exist
@@ -161,13 +163,12 @@ window.ProductsAdd = (() => {
         });
         
         // Update UI to show the restored color
-        const colorNameInput = document.getElementById('pa-color-name');
-        const colorPicker = document.getElementById('pa-custom-color-picker');
-        if(colorNameInput) colorNameInput.value = customColorName;
-        if(colorPicker && selectedColorHex) colorPicker.value = selectedColorHex;
-        setTimeout(() => updateColorVariationsUI(), 100);  // Delay to ensure DOM is ready
+        setTimeout(() => { updateMainColorUI(); updateColorVariationsUI(); }, 100);  // Delay to ensure DOM is ready
+      } else {
+        // New product - initialize main color UI
+        setTimeout(() => { updateMainColorUI(); }, 100);
       }
-    }
+      }
     } catch (err) {
       console.error('Failed to load colors:', err);
       Toast.warn('Failed to load colors');
@@ -309,6 +310,9 @@ window.ProductsAdd = (() => {
                 <span>Upload Primary Image</span>
               </div>
               <input type="file" id="img-upload" accept="image/*" class="hidden" />
+              <div id="pa-main-color-indicator" style="margin-top:12px;padding:10px;border-radius:var(--r-sm);background:var(--bg-light);border:1px solid var(--border);display:none">
+                <small style="color:var(--text-muted)">Assigned to: <span id="pa-main-color-name" style="font-weight:600"></span></small>
+              </div>
             </div>
           </div>
 
@@ -372,14 +376,25 @@ window.ProductsAdd = (() => {
                 <small style="color:var(--text-muted);display:block;margin-top:4px">Auto-generated and customizable</small>
               </div>
 
+              <!-- Main Color Assignment -->
+              <div style="background:var(--success-light);padding:12px;border-radius:var(--r-md);border:1px solid var(--success);margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <label class="form-label fw-600" style="margin:0;color:var(--success)">Assign to Main Assets</label>
+                  <button type="button" id="pa-assign-main-btn" class="btn btn-sm" style="padding:4px 12px;font-size:0.85rem;opacity:0.6" onclick="window.ProductsAdd.assignColorToMain()" disabled>Assign Selected Color</button>
+                </div>
+                <div id="pa-main-color-assignment" style="font-size:0.9rem;color:var(--text-muted)">
+                  <p style="margin:0">No color assigned to main image and 3D model yet</p>
+                </div>
+              </div>
+              
               <!-- Color Variations -->
               <div style="background:var(--bg-light);padding:12px;border-radius:var(--r-md);border:1px solid var(--border)">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                   <label class="form-label fw-600" style="margin:0">Color Variations</label>
-                  <button type="button" id="pa-add-variation-btn" class="btn btn-sm" style="padding:4px 12px;font-size:0.85rem" onclick="window.ProductsAdd.addColorVariation()">+ Add Selected Color</button>
+                  <button type="button" id="pa-add-variation-btn" class="btn btn-sm" style="padding:4px 12px;font-size:0.85rem" onclick="window.ProductsAdd.addColorVariation()">+ Add Another Color</button>
                 </div>
                 <div id="pa-color-variations" style="min-height:60px;display:flex;flex-direction:column;gap:8px">
-                  <p style="margin:0;color:var(--text-muted);font-size:0.9rem">Select primary color first</p>
+                  <p style="margin:0;color:var(--text-muted);font-size:0.9rem">Assign a main color first, or add variations directly</p>
                 </div>
               </div>
             </div>
@@ -512,6 +527,7 @@ window.ProductsAdd = (() => {
     const colorNameInput = document.getElementById('pa-color-name');
     const colorPicker = document.getElementById('pa-custom-color-picker');
     const colorPreview = document.getElementById('pa-custom-color-preview');
+    const assignBtn = document.getElementById('pa-assign-main-btn');
     
     if (!color) {
       selectedColor = null;
@@ -524,6 +540,7 @@ window.ProductsAdd = (() => {
       }
       if(colorPicker) colorPicker.value = '#808080';
       if(colorPreview) colorPreview.style.background = '#808080';
+      if(assignBtn) assignBtn.disabled = true;
     } else {
       selectedColor = color;
       isCustomColor = false;
@@ -535,6 +552,7 @@ window.ProductsAdd = (() => {
       }
       if(colorPicker) colorPicker.value = '#808080';
       if(colorPreview) colorPreview.style.background = '#808080';
+      if(assignBtn) assignBtn.disabled = false;
     }
     updateColorVariationsUI();
   }
@@ -543,6 +561,7 @@ window.ProductsAdd = (() => {
     const colorNameInput = document.getElementById('pa-color-name');
     const colorPreview = document.getElementById('pa-custom-color-preview');
     const colorSelect = document.getElementById('pa-color');
+    const assignBtn = document.getElementById('pa-assign-main-btn');
     
     selectedColor = hex;
     selectedColorHex = hex;
@@ -559,11 +578,57 @@ window.ProductsAdd = (() => {
     if(colorSelect) {
       colorSelect.value = ''; // Clear preset selection
     }
+    if(assignBtn) assignBtn.disabled = false;
     updateColorVariationsUI();
   }
 
   function setColorName(name) {
     customColorName = name.trim();
+  }
+
+  function updateMainColorUI() {
+    const indicator = document.getElementById('pa-main-color-indicator');
+    const colorNameSpan = document.getElementById('pa-main-color-name');
+    const assignmentDiv = document.getElementById('pa-main-color-assignment');
+    
+    if (!mainColorName) {
+      if(indicator) indicator.style.display = 'none';
+      if(assignmentDiv) assignmentDiv.innerHTML = '<p style="margin:0">No color assigned to main image and 3D model yet</p>';
+      return;
+    }
+    
+    if(indicator) indicator.style.display = 'block';
+    if(colorNameSpan) colorNameSpan.textContent = mainColorName;
+    
+    const hexDisplay = mainColorHex || '#808080';
+    let assignmentHTML = `<div style="display:flex;align-items:center;gap:8px">`;
+    assignmentHTML += `<div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--success);background:${hexDisplay}"></div>`;
+    assignmentHTML += `<span>${mainColorName}</span>`;
+    assignmentHTML += `<button type="button" onclick="window.ProductsAdd.clearMainColorAssignment()" style="margin-left:auto;background:none;border:none;color:var(--danger);cursor:pointer;padding:4px 8px;font-size:0.9rem">Clear</button>`;
+    assignmentHTML += '</div>';
+    if(assignmentDiv) assignmentDiv.innerHTML = assignmentHTML;
+  }
+
+  function assignColorToMain() {
+    if (!selectedColor || !customColorName) {
+      Toast.warn('Please select a color first');
+      return;
+    }
+    
+    mainColorName = customColorName;
+    mainColorHex = selectedColorHex;
+    mainIsCustomColor = isCustomColor;
+    
+    Toast.success(`Assigned "${customColorName}" to main image and 3D model`);
+    updateMainColorUI();
+  }
+
+  function clearMainColorAssignment() {
+    mainColorName = null;
+    mainColorHex = null;
+    mainIsCustomColor = false;
+    Toast.info('Cleared main color assignment');
+    updateMainColorUI();
   }
 
   function switchColorTab(tab) {
@@ -692,7 +757,7 @@ window.ProductsAdd = (() => {
 
   function addColorVariation() {
     if (!selectedColor) {
-      Toast.warn('Please select a primary color first');
+      Toast.warn('Please select a color first');
       return;
     }
 
@@ -704,6 +769,13 @@ window.ProductsAdd = (() => {
     }
 
     const selectedVariationHex = (selectedColorHex || availableColors[selectedColor] || '#808080').toUpperCase();
+    
+    // Check if this color is already assigned to main
+    if (mainColorName === baseVariationName) {
+      Toast.info('This color is already assigned to the main image and 3D model');
+      return;
+    }
+    
     const hasSameHexVariation = Object.values(colorVariations).some(variation => {
       const variationHex = (variation?._hex || '#808080').toUpperCase();
       return variationHex === selectedVariationHex;
@@ -761,12 +833,18 @@ window.ProductsAdd = (() => {
       const price = parseFloat(priceEl.value) || 0;
       if(!name) throw new Error('Product Name is required');
       if(price <= 0) throw new Error('Valid base price is required');
-      if(!selectedColor) throw new Error('Product Color is required');
+      
+      // Require either main color or variations
+      const hasMainColor = !!mainColorName;
+      const hasVariations = Object.keys(colorVariations).length > 0;
+      if (!hasMainColor && !hasVariations) {
+        throw new Error('Please assign a main color or add color variations');
+      }
 
       let modelUrlRes = undefined;
       let imageUrlRes = undefined;
 
-      // Uploads
+      // Uploads - main image and model
       if (file3dPreview) {
         btn.textContent = 'Uploading 3D...';
         const u = await FilebaseService.uploadFile(file3dPreview, PRODUCT_MODEL_FOLDER);
@@ -778,24 +856,34 @@ window.ProductsAdd = (() => {
         imageUrlRes = u.key;
       }
 
+      // For published products with main color, enforce main assets
+      if (status === 'published' && hasMainColor) {
+        if (!imageUrlRes && !editId) {
+          throw new Error(`Main color "${mainColorName}" requires a primary image before publishing`);
+        }
+        if (!modelUrlRes && !editId) {
+          throw new Error(`Main color "${mainColorName}" requires a 3D model before publishing`);
+        }
+      }
+
       btn.textContent = 'Writing Database...';
       const id = editId || FirebaseService.newKey('products');
 
       const disc = parseFloat(document.getElementById('pa-discount')?.value || '0') || 0;
       const discStr = disc > 0 ? disc + '%' : '0';
 
-      // Add custom color to presets if it doesn't exist
-      if (isCustomColor && selectedColorHex && !(selectedColor in availableColors)) {
+      // Add main color to presets if it doesn't exist
+      if (hasMainColor && mainIsCustomColor && mainColorHex && !(mainColorName in availableColors)) {
         btn.textContent = 'Adding Color to Presets...';
-        const sanitizedColorName = sanitizeFirebaseKey(customColorName);
-        availableColors[sanitizedColorName] = selectedColorHex;
-        await FirebaseService.update('colors', { [sanitizedColorName]: selectedColorHex });
+        const sanitizedMainColorName = sanitizeFirebaseKey(mainColorName);
+        availableColors[sanitizedMainColorName] = mainColorHex;
+        await FirebaseService.update('colors', { [sanitizedMainColorName]: mainColorHex });
       }
 
       // Build clean variation payload without _hex and with sanitized keys
       let cleanVariations = {};
       let missingVariationColors = {};
-      if (Object.keys(colorVariations).length > 0) {
+      if (hasVariations) {
         Object.entries(colorVariations).forEach(([colorName, colorData]) => {
           const sanitizedKey = sanitizeFirebaseKey(colorName);
           cleanVariations[sanitizedKey] = {
@@ -818,7 +906,7 @@ window.ProductsAdd = (() => {
       }
 
       // Upload variation assets and enforce publish validation
-      if (Object.keys(colorVariations).length > 0) {
+      if (hasVariations) {
         btn.textContent = 'Uploading Variation Assets...';
         for (const [colorName, colorData] of Object.entries(colorVariations)) {
           const sanitizedKey = sanitizeFirebaseKey(colorName);
@@ -853,19 +941,24 @@ window.ProductsAdd = (() => {
         inStock: !!stockEl?.checked,
         discount: discStr,
         isFavorite: !!featEl?.checked,
-        status: status,
-        color: customColorName, // Store the actual color name, not hex
-        isCustomColor: isCustomColor
+        status: status
       };
 
-      if (isCustomColor && selectedColorHex) {
-        updatePayload.colorHex = selectedColorHex; // Store hex for reference
+      // Store main color info
+      if (hasMainColor) {
+        updatePayload.color = mainColorName;
+        updatePayload.isCustomColor = mainIsCustomColor;
+        if (mainIsCustomColor && mainColorHex) {
+          updatePayload.colorHex = mainColorHex;
+        }
       }
 
-      if (Object.keys(cleanVariations).length > 0) {
+      // Store variations
+      if (hasVariations) {
         updatePayload.variation = cleanVariations;
       }
 
+      // Store main image and model
       if (modelUrlRes) updatePayload.modelUrl = modelUrlRes;
       if (imageUrlRes) updatePayload.imageUrl = imageUrlRes;
 
@@ -902,7 +995,10 @@ window.ProductsAdd = (() => {
     isCustomColor = false;
     colorVariations = {};
     variationUploadBindingsReady = false;
+    mainColorName = null;
+    mainColorHex = null;
+    mainIsCustomColor = false;
   }
 
-  return { mount, unmount, toggleWireframe, resetCam, saveProduct, setColor, setCustomColor, setColorName, switchColorTab, addColorVariation, removeColorVariation, pickVariationFile };
+  return { mount, unmount, toggleWireframe, resetCam, saveProduct, setColor, setCustomColor, setColorName, switchColorTab, updateMainColorUI, assignColorToMain, clearMainColorAssignment, addColorVariation, removeColorVariation, pickVariationFile };
 })();
