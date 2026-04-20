@@ -139,11 +139,21 @@ window.ProductsAdd = (() => {
           mainColorName = product.color;
           mainIsCustomColor = false;
           mainColorHex = null;
+          // Also set selectedColor for color picker population
+          selectedColor = product.color;
+          selectedColorHex = null;
+          isCustomColor = false;
+          customColorName = product.color;
         } else {
           // Custom color - should have colorHex stored
           mainColorName = product.color;
           mainColorHex = product?.colorHex || '#808080';
           mainIsCustomColor = true;
+          // Also set selectedColor for color picker population
+          selectedColor = mainColorHex;
+          selectedColorHex = mainColorHex;
+          isCustomColor = true;
+          customColorName = product.color;
         }
         
         // Load variations only if they exist
@@ -163,7 +173,15 @@ window.ProductsAdd = (() => {
         });
         
         // Update UI to show the restored color
-        setTimeout(() => { updateMainColorUI(); updateColorVariationsUI(); }, 100);  // Delay to ensure DOM is ready
+        setTimeout(() => { 
+          updateMainColorUI(); 
+          updateColorVariationsUI(); 
+          // Update color picker UI to reflect loaded color
+          const colorNameInput = document.getElementById('pa-color-name');
+          const colorPicker = document.getElementById('pa-custom-color-picker');
+          if(colorNameInput) colorNameInput.value = customColorName;
+          if(colorPicker && selectedColorHex) colorPicker.value = selectedColorHex;
+        }, 100);  // Delay to ensure DOM is ready
       } else {
         // New product - initialize main color UI
         setTimeout(() => { updateMainColorUI(); }, 100);
@@ -380,7 +398,7 @@ window.ProductsAdd = (() => {
               <div style="background:var(--success-light);padding:12px;border-radius:var(--r-md);border:1px solid var(--success);margin-bottom:12px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                   <label class="form-label fw-600" style="margin:0;color:var(--success)">Assign to Main Assets</label>
-                  <button type="button" id="pa-assign-main-btn" class="btn btn-sm" style="padding:4px 12px;font-size:0.85rem;opacity:0.6" onclick="window.ProductsAdd.assignColorToMain()" disabled>Assign Selected Color</button>
+                  <button type="button" id="pa-assign-main-btn" class="btn btn-sm" style="padding:4px 12px;font-size:0.85rem;opacity:1" onclick="window.ProductsAdd.assignColorToMain()" disabled>+ Assign Selected Color</button>
                 </div>
                 <div id="pa-main-color-assignment" style="font-size:0.9rem;color:var(--text-muted)">
                   <p style="margin:0">No color assigned to main image and 3D model yet</p>
@@ -388,9 +406,9 @@ window.ProductsAdd = (() => {
               </div>
               
               <!-- Color Variations -->
-              <div style="background:var(--bg-light);padding:12px;border-radius:var(--r-md);border:1px solid var(--border)">
+              <div style="background:var(--bg-light);padding:12px;border-radius:var(--r-md);border:1px solid #283041">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                  <label class="form-label fw-600" style="margin:0">Color Variations</label>
+                  <label class="form-label fw-600" style="margin:0">Assign to Color Variations</label>
                   <button type="button" id="pa-add-variation-btn" class="btn btn-sm" style="padding:4px 12px;font-size:0.85rem" onclick="window.ProductsAdd.addColorVariation()">+ Add Another Color</button>
                 </div>
                 <div id="pa-color-variations" style="min-height:60px;display:flex;flex-direction:column;gap:8px">
