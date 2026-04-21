@@ -7,8 +7,16 @@ window.ProductsList = (() => {
   let activeStatusFilter = 'all';
   let activeSearchQuery = '';
   let activeStockFilter = 'all';
+  let activeCategoryFilter = 'all';
 
   function mount(container) {
+    // Check for category query param
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryParam = urlParams.get('category');
+    if (categoryParam) {
+      activeCategoryFilter = categoryParam;
+    }
+
     container.innerHTML = `
       <div class="page-header">
         <h1>Product List</h1>
@@ -33,6 +41,7 @@ window.ProductsList = (() => {
             <button id="pl-filter-btn" class="btn btn-outline btn-icon" title="Filter: All stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg></button>
           </div>
         </div>
+        <div id="pl-category-filter" class="category-filter-wrap" style="display:none; padding:12px 0; border-bottom:1px solid var(--border-light);"></div>
         <div class="table-wrap" style="border:none;box-shadow:none;border-radius:0;">
           <table>
             <thead>
@@ -64,6 +73,7 @@ window.ProductsList = (() => {
     setupTabFilters();
     setupSearchFilter();
     setupStockFilter();
+    setupCategoryFilter();
   }
 
   function setupTabFilters() {
@@ -116,6 +126,31 @@ window.ProductsList = (() => {
     });
   }
 
+  function setupCategoryFilter() {
+    renderCategoryFilter();
+  }
+
+  function renderCategoryFilter() {
+    const filterWrap = document.getElementById('pl-category-filter');
+    if (!filterWrap) return;
+
+    if (activeCategoryFilter === 'all' || !activeCategoryFilter) {
+      filterWrap.style.display = 'none';
+      return;
+    }
+
+    const catName = categories[activeCategoryFilter] || activeCategoryFilter;
+    filterWrap.style.display = 'flex';
+    filterWrap.innerHTML = `
+      <div class="flex items-center gap-2" style="padding: 0 12px;">
+        <span class="text-sm"><strong>Filtering by:</strong> ${catName}</span>
+        <button class="btn btn-outline btn-sm" onclick="window.ProductsList.clearCategoryFilter()" style="padding: 4px 10px; font-size: 11px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Clear
+        </button>
+      </div>
+    `;
+  }
+
   async function loadMap() {
     try {
       const catRes = await FirebaseService.readList('categories');
@@ -155,14 +190,19 @@ window.ProductsList = (() => {
           const inStock = !!p.inStock && Number(p.quantity || 0) > 0;
           return activeStockFilter === 'in_stock' ? inStock : !inStock;
         });
-    document.getElementById('pl-showing').textContent = `Showing ${stockFilteredProducts.length} entries`;
+    const categoryFilteredProducts = activeCategoryFilter === 'all' || !activeCategoryFilter
+      ? stockFilteredProducts
+      : stockFilteredProducts.filter(p => p.category === activeCategoryFilter);
+    
+    document.getElementById('pl-showing').textContent = `Showing ${categoryFilteredProducts.length} entries`;
+    renderCategoryFilter();
 
-    if (stockFilteredProducts.length === 0) {
+    if (categoryFilteredProducts.length === 0) {
       tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No products found.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = stockFilteredProducts.map(p => {
+    tbody.innerHTML = categoryFilteredProducts.map(p => {
       const catStr = categories[p.category] || p.category || 'Uncategorized';
       const img = imageUrlsByProductId[p.id] || (p.imageUrl ? FilebaseService.publicUrl(p.imageUrl) : '');
       const statCls = p.status === 'draft' ? 'badge-neutral' : 'badge-success';
@@ -241,5 +281,11 @@ window.ProductsList = (() => {
     if (unsub) unsub();
   }
 
-  return { mount, unmount, deleteProduct };
+  function clearCategoryFilter() {
+    activeCategoryFilter = 'all';
+    window.history.replaceState(null, '', '#/products-list');
+    renderTable();
+  }
+
+  return { mount, unmount, deleteProduct, clearCategoryFilter };
 })();
