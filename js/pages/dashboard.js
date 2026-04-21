@@ -187,8 +187,7 @@ window.Dashboard = (() => {
           bestTb.innerHTML = fallback.map(p => `
             <tr>
               <td>${p.name}</td>
-              <td>${p.qty}</td>
-              <td><span class="badge ${p.qty > 0 ? 'badge-success' : 'badge-danger'}">${p.qty > 0 ? 'Stock' : 'Out'}</span></td>
+              <td><span class="badge ${p.qty > 0 ? 'badge-success' : 'badge-danger'}">${p.qty > 0 ? 'Published' : 'Not Published'}</span></td>
               <td>₱ ${Number(p.price).toFixed(2)}</td>
             </tr>`).join('');
         }
@@ -290,7 +289,6 @@ window.Dashboard = (() => {
               <thead>
                 <tr>
                   <th>Product</th>
-                  <th>Total</th>
                   <th>Status</th>
                   <th>Price</th>
                 </tr>
