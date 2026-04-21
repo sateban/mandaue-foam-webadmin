@@ -10,8 +10,10 @@ window.ProductsList = (() => {
   let activeCategoryFilter = 'all';
 
   function mount(container) {
-    // Check for category query param
-    const urlParams = new URLSearchParams(window.location.search);
+    // Check for category query param from hash
+    const hashWithQuery = window.location.hash.slice(1); // Remove the #
+    const queryString = hashWithQuery.split('?')[1] || '';
+    const urlParams = new URLSearchParams(queryString);
     const categoryParam = urlParams.get('category');
     if (categoryParam) {
       activeCategoryFilter = categoryParam;
@@ -192,7 +194,10 @@ window.ProductsList = (() => {
         });
     const categoryFilteredProducts = activeCategoryFilter === 'all' || !activeCategoryFilter
       ? stockFilteredProducts
-      : stockFilteredProducts.filter(p => p.category === activeCategoryFilter);
+      : stockFilteredProducts.filter(p => {
+          const expectedCategoryName = categories[activeCategoryFilter];
+          return p.category === expectedCategoryName;
+        });
     
     document.getElementById('pl-showing').textContent = `Showing ${categoryFilteredProducts.length} entries`;
     renderCategoryFilter();
