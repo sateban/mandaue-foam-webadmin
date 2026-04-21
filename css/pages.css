@@ -297,12 +297,13 @@
 /* ── Customers ───────────────────────────────────── */
 .customers-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 20px;
+  grid-template-columns: 1fr 280px;
+  gap: 12px;
   align-items: start;
 }
-@media (max-width: 1000px) { .customers-layout { grid-template-columns: 1fr; } }
-.customer-detail-card { position: sticky; top: 0; }
+@media (max-width: 1200px) { .customers-layout { grid-template-columns: 1fr 260px; gap: 10px; } }
+@media (max-width: 1000px) { .customers-layout { grid-template-columns: 1fr; gap: 20px; } }
+.customer-detail-card { position: sticky; top: 0; height: fit-content; }
 
 .customer-insight-grid {
   display: grid;
@@ -311,8 +312,15 @@
   margin-bottom: 20px;
 }
 .customer-stat-stack {
-  display: grid;
+  /* display: grid;
   grid-template-columns: 1fr;
+  gap: 12px; */
+    /* Span all columns of the .customer-insight-grid */
+  grid-column: 1 / -1; 
+  
+  /* Distribute children evenly */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 .customer-overview-card .card-header {
