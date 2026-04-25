@@ -116,7 +116,9 @@ window.ProductsAdd = (() => {
     if(el('pa-desc')) el('pa-desc').value = product?.description || '';
     if(el('pa-price')) el('pa-price').value = product?.price || '';
     if(el('pa-discount')) el('pa-discount').value = parseFloat(product?.discount || 0);
-    if(el('pa-qty')) el('pa-qty').value = product?.quantity || '0';
+    if(el('pa-model-width')) el('pa-model-width').value = product?.modelScale || '';
+    if(el('pa-model-height')) el('pa-model-height').value = product?.modelScaleHeight || '';
+    if(el('pa-model-length')) el('pa-model-length').value = product?.modelScaleLength || '';
     if(el('pa-stock')) el('pa-stock').checked = product?.inStock ?? true;
     if(el('pa-feat')) el('pa-feat').checked = product?.isFavorite ?? false;
 
@@ -303,10 +305,6 @@ window.ProductsAdd = (() => {
                 <label class="form-label">Discount (%)</label>
                 <input type="number" id="pa-discount" class="input" placeholder="e.g. 10" />
               </div>
-              <div class="form-group">
-                <label class="form-label">Quantity</label>
-                <input type="number" id="pa-qty" class="input" min="0" placeholder="0" />
-              </div>
               <div class="form-group" style="justify-content:center;padding-top:20px">
                 <label class="form-toggle">
                   <input type="checkbox" id="pa-stock" checked />
@@ -315,6 +313,46 @@ window.ProductsAdd = (() => {
                 </label>
               </div>
             </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>3D Model Scale</h3></div>
+            <div class="card-body grid-2">
+              <div class="form-group">
+                <label class="form-label">Target Width</label>
+                <div class="input-group" style="gap:8px">
+                  <input type="number" id="pa-model-width" class="input" min="0" step="0.1" placeholder="e.g. 50" required />
+                  <select id="pa-model-width-unit" class="select" style="width:100px">
+                    <option value="cm" selected>cm</option>
+                    <option value="mm">mm</option>
+                    <option value="m">m</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Target Height</label>
+                <div class="input-group" style="gap:8px">
+                  <input type="number" id="pa-model-height" class="input" min="0" step="0.1" placeholder="e.g. 120" required />
+                  <select id="pa-model-height-unit" class="select" style="width:100px">
+                    <option value="cm" selected>cm</option>
+                    <option value="mm">mm</option>
+                    <option value="m">m</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Target Length</label>
+                <div class="input-group" style="gap:8px">
+                  <input type="number" id="pa-model-length" class="input" min="0" step="0.1" placeholder="e.g. 30" required />
+                  <select id="pa-model-length-unit" class="select" style="width:100px">
+                    <option value="cm" selected>cm</option>
+                    <option value="mm">mm</option>
+                    <option value="m">m</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div style="padding:0 16px 16px;font-size:0.9rem;color:var(--text-muted)">Values are stored in centimeters (cm) for accurate 3D scaling. Choose mm or m if needed.</div>
           </div>
         </div>
 
@@ -398,7 +436,7 @@ window.ProductsAdd = (() => {
               <div style="background:var(--success-light);padding:12px;border-radius:var(--r-md);border:1px solid var(--success);margin-bottom:12px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                   <label class="form-label fw-600" style="margin:0;color:var(--success)">Assign to Main Assets</label>
-                  <button type="button" id="pa-assign-main-btn" class="btn btn-sm" style="padding:4px 12px;font-size:0.85rem;opacity:1" onclick="window.ProductsAdd.assignColorToMain()" disabled>+ Assign Selected Color</button>
+                  <button type="button" id="pa-assign-main-btn"   class="btn btn-sm" style="padding:4px 12px;font-size:0.85rem;opacity:1" onclick="window.ProductsAdd.assignColorToMain()" disabled>+ Assign Selected Color</button>
                 </div>
                 <div id="pa-main-color-assignment" style="font-size:0.9rem;color:var(--text-muted)">
                   <p style="margin:0">No color assigned to main image and 3D model yet</p>
@@ -602,6 +640,19 @@ window.ProductsAdd = (() => {
 
   function setColorName(name) {
     customColorName = name.trim();
+  }
+
+  function parseDimensionToCm(value, unit = 'cm') {
+    const num = parseFloat(value);
+    if (Number.isNaN(num) || num <= 0) return null;
+    switch (unit) {
+      case 'mm':
+        return Math.round(num / 10);
+      case 'm':
+        return Math.round(num * 100);
+      default:
+        return Math.round(num);
+    }
   }
 
   function updateMainColorUI() {
@@ -841,7 +892,12 @@ window.ProductsAdd = (() => {
       const priceEl = document.getElementById('pa-price');
       const descEl = document.getElementById('pa-desc');
       const catEl = document.getElementById('pa-cat');
-      const qtyEl = document.getElementById('pa-qty');
+      const widthEl = document.getElementById('pa-model-width');
+      const widthUnitEl = document.getElementById('pa-model-width-unit');
+      const heightEl = document.getElementById('pa-model-height');
+      const heightUnitEl = document.getElementById('pa-model-height-unit');
+      const lengthEl = document.getElementById('pa-model-length');
+      const lengthUnitEl = document.getElementById('pa-model-length-unit');
       const stockEl = document.getElementById('pa-stock');
       const featEl = document.getElementById('pa-feat');
       
@@ -849,8 +905,17 @@ window.ProductsAdd = (() => {
       
       const name = nameEl.value.trim();
       const price = parseFloat(priceEl.value) || 0;
+      const modelScaleCm = parseDimensionToCm(widthEl?.value, widthUnitEl?.value);
+      const modelScaleHeightCm = parseDimensionToCm(heightEl?.value, heightUnitEl?.value);
+      const modelScaleLengthCm = parseDimensionToCm(lengthEl?.value, lengthUnitEl?.value);
+      
       if(!name) throw new Error('Product Name is required');
       if(price <= 0) throw new Error('Valid base price is required');
+      if (status === 'published') {
+        if (!modelScaleCm || !modelScaleHeightCm || !modelScaleLengthCm) {
+          throw new Error('Width, height, and length are required for published 3D models');
+        }
+      }
       
       // Require either main color or variations
       const hasMainColor = !!mainColorName;
@@ -955,12 +1020,21 @@ window.ProductsAdd = (() => {
         price,
         description: descEl?.value.trim() || '',
         category: catEl?.value || '',
-        quantity: parseInt(qtyEl?.value || '0') || 0,
         inStock: !!stockEl?.checked,
         discount: discStr,
         isFavorite: !!featEl?.checked,
         status: status
       };
+
+      if (modelScaleCm !== null) {
+        updatePayload.modelScale = modelScaleCm;
+      }
+      if (modelScaleHeightCm !== null) {
+        updatePayload.modelScaleHeight = modelScaleHeightCm;
+      }
+      if (modelScaleLengthCm !== null) {
+        updatePayload.modelScaleLength = modelScaleLengthCm;
+      }
 
       // Store main color info
       if (hasMainColor) {

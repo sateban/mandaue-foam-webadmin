@@ -1,7 +1,20 @@
 /* products-media.js */
 window.ProductsMedia = (() => {
   let files = [];
+  let activeFileTypeFilter = 'all';
   const MEDIA_PREFIXES = ['image-assets/', 'model-assets/'];
+  const FILE_TYPES = {
+    all: 'All Files',
+    images: 'Images',
+    '3d': '3D Models',
+    glb: 'GLB',
+    gltf: 'GLTF',
+    obj: 'OBJ',
+    jpg: 'JPG',
+    png: 'PNG',
+    gif: 'GIF',
+    webp: 'WebP'
+  };
 
   function mount(container) {
     container.innerHTML = `
@@ -14,6 +27,13 @@ window.ProductsMedia = (() => {
             Upload File
           </button>
         </div>
+      </div>
+
+      <div class="file-type-filter" style="padding:12px;background:var(--bg-light);border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span class="text-xs text-muted fw-600">Filter:</span>
+        ${Object.entries(FILE_TYPES).map(([key, label]) => `
+          <button class="btn btn-sm ${key === 'all' ? 'btn-primary' : 'btn-outline'}" onclick="window.ProductsMedia.setFileTypeFilter('${key}')" data-filter="${key}">${label}</button>
+        `).join('')}
       </div>
 
       <div class="media-grid" id="media-grid">
@@ -48,7 +68,21 @@ window.ProductsMedia = (() => {
     if (!grid) return;
 
     // Filter out trailing slash dirs
-    const valid = files.filter(f => f.key && !f.key.endsWith('/') && f.size > 0);
+    let valid = files.filter(f => f.key && !f.key.endsWith('/') && f.size > 0);
+    
+    // Apply file type filter
+    if (activeFileTypeFilter !== 'all') {
+      valid = valid.filter(f => {
+        const ext = f.key.split('.').pop().toLowerCase();
+        if (activeFileTypeFilter === 'images') {
+          return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+        } else if (activeFileTypeFilter === '3d') {
+          return ['glb', 'gltf', 'obj'].includes(ext);
+        } else {
+          return ext === activeFileTypeFilter;
+        }
+      });
+    }
     valid.sort((a,b) => new Date(b.lastModified) - new Date(a.lastModified)); // newest first
 
     document.getElementById('media-count').textContent = `${valid.length} files`;
@@ -86,6 +120,21 @@ window.ProductsMedia = (() => {
       `;
     }).join('');
   }
+
+  function setFileTypeFilter(type) {
+    activeFileTypeFilter = type;
+    document.querySelectorAll('.file-type-filter .btn').forEach(btn => {
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-outline');
+      if (btn.dataset.filter === type) {
+        btn.classList.remove('btn-outline');
+        btn.classList.add('btn-primary');
+      }
+    });
+    renderList();
+  }
+
+  return { mount, unmount: () => {}, uploadModal, viewFile, deleteFile, setFileTypeFilter };
 
   function viewFile(url, name, ext) {
     const is3D = ['glb','gltf','obj'].includes(ext);
