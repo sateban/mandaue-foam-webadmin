@@ -7,8 +7,19 @@ window.ProductsList = (() => {
   let activeStatusFilter = 'all';
   let activeSearchQuery = '';
   let activeStockFilter = 'all';
+  let activeCategoryFilter = 'all';
+  let activePriceSort = 'none';
 
   function mount(container) {
+    // Check for category query param from hash
+    const hashWithQuery = window.location.hash.slice(1); // Remove the #
+    const queryString = hashWithQuery.split('?')[1] || '';
+    const urlParams = new URLSearchParams(queryString);
+    const categoryParam = urlParams.get('category');
+    if (categoryParam) {
+      activeCategoryFilter = categoryParam;
+    }
+
     container.innerHTML = `
       <div class="page-header">
         <h1>Product List</h1>
@@ -30,9 +41,10 @@ window.ProductsList = (() => {
               <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               <input type="text" id="pl-search" placeholder="Search product..." />
             </div>
-            <button id="pl-filter-btn" class="btn btn-outline btn-icon" title="Filter: All stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg></button>
+            <button id="pl-filter-btn" class="btn btn-outline btn-icon" title="Filter: All Prices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg></button>
           </div>
         </div>
+        <div id="pl-category-filter" class="category-filter-wrap" style="display:none; padding:12px 0; border-bottom:1px solid var(--border-light);"></div>
         <div class="table-wrap" style="border:none;box-shadow:none;border-radius:0;">
           <table>
             <thead>
@@ -41,7 +53,6 @@ window.ProductsList = (() => {
                 <th>Product</th>
                 <th>Category</th>
                 <th>Price</th>
-                <th>Stock</th>
                 <th>Status</th>
                 <th width="80">Action</th>
               </tr>
@@ -64,6 +75,7 @@ window.ProductsList = (() => {
     setupTabFilters();
     setupSearchFilter();
     setupStockFilter();
+    setupCategoryFilter();
   }
 
   function setupTabFilters() {
@@ -97,23 +109,47 @@ window.ProductsList = (() => {
     if (!filterBtn) return;
 
     const labels = {
-      all: 'All stock',
-      in_stock: 'In stock only',
-      out_of_stock: 'Out of stock only'
+      all: 'All Prices',
+      price_low_high: 'Price: Low to High',
+      price_high_low: 'Price: High to Low',
+      published: 'Published Only',
+      draft: 'Draft Only'
     };
 
-    filterBtn.addEventListener('click', () => {
-      if (activeStockFilter === 'all') {
-        activeStockFilter = 'in_stock';
-      } else if (activeStockFilter === 'in_stock') {
-        activeStockFilter = 'out_of_stock';
-      } else {
-        activeStockFilter = 'all';
-      }
+    let filterState = 0;
+    const filterSequence = ['all', 'price_low_high', 'price_high_low', 'published', 'draft'];
 
+    filterBtn.addEventListener('click', () => {
+      filterState = (filterState + 1) % filterSequence.length;
+      activeStockFilter = filterSequence[filterState];
       filterBtn.title = `Filter: ${labels[activeStockFilter]}`;
       renderTable();
     });
+  }
+
+  function setupCategoryFilter() {
+    renderCategoryFilter();
+  }
+
+  function renderCategoryFilter() {
+    const filterWrap = document.getElementById('pl-category-filter');
+    if (!filterWrap) return;
+
+    if (activeCategoryFilter === 'all' || !activeCategoryFilter) {
+      filterWrap.style.display = 'none';
+      return;
+    }
+
+    const catName = categories[activeCategoryFilter] || activeCategoryFilter;
+    filterWrap.style.display = 'flex';
+    filterWrap.innerHTML = `
+      <div class="flex items-center gap-2" style="padding: 0 12px;">
+        <span class="text-sm"><strong>Filtering by:</strong> ${catName}</span>
+        <button class="btn btn-outline btn-sm" onclick="window.ProductsList.clearCategoryFilter()" style="padding: 4px 10px; font-size: 11px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Clear
+        </button>
+      </div>
+    `;
   }
 
   async function loadMap() {
@@ -149,20 +185,34 @@ window.ProductsList = (() => {
             categoryLabel.includes(activeSearchQuery) ||
             color.includes(activeSearchQuery);
         });
-    const stockFilteredProducts = activeStockFilter === 'all'
-      ? searchedProducts
-      : searchedProducts.filter(p => {
-          const inStock = !!p.inStock && Number(p.quantity || 0) > 0;
-          return activeStockFilter === 'in_stock' ? inStock : !inStock;
+    let stockFilteredProducts = searchedProducts;
+    if (activeStockFilter === 'published') {
+      stockFilteredProducts = searchedProducts.filter(p => (p.status || 'published') === 'published');
+    } else if (activeStockFilter === 'draft') {
+      stockFilteredProducts = searchedProducts.filter(p => (p.status || 'published') === 'draft');
+    }
+    // Price sorting applied after all filters
+    if (activeStockFilter === 'price_low_high') {
+      stockFilteredProducts = [...stockFilteredProducts].sort((a, b) => (a.price || 0) - (b.price || 0));
+    } else if (activeStockFilter === 'price_high_low') {
+      stockFilteredProducts = [...stockFilteredProducts].sort((a, b) => (b.price || 0) - (a.price || 0));
+    }
+    const categoryFilteredProducts = activeCategoryFilter === 'all' || !activeCategoryFilter
+      ? stockFilteredProducts
+      : stockFilteredProducts.filter(p => {
+          const expectedCategoryName = categories[activeCategoryFilter];
+          return p.category === expectedCategoryName;
         });
-    document.getElementById('pl-showing').textContent = `Showing ${stockFilteredProducts.length} entries`;
+    
+    document.getElementById('pl-showing').textContent = `Showing ${categoryFilteredProducts.length} entries`;
+    renderCategoryFilter();
 
-    if (stockFilteredProducts.length === 0) {
+    if (categoryFilteredProducts.length === 0) {
       tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No products found.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = stockFilteredProducts.map(p => {
+    tbody.innerHTML = categoryFilteredProducts.map(p => {
       const catStr = categories[p.category] || p.category || 'Uncategorized';
       const img = imageUrlsByProductId[p.id] || (p.imageUrl ? FilebaseService.publicUrl(p.imageUrl) : '');
       const statCls = p.status === 'draft' ? 'badge-neutral' : 'badge-success';
@@ -182,7 +232,6 @@ window.ProductsList = (() => {
           </td>
           <td>${catStr}</td>
           <td class="fw-600">₱ ${(Number(p.price)||0).toFixed(2)}</td>
-          <td>${p.inStock ? p.quantity : '<span class="text-danger">Out</span>'}</td>
           <td><span class="badge ${statCls}">${statTxt}</span></td>
           <td>
             <div class="td-actions">
@@ -241,5 +290,11 @@ window.ProductsList = (() => {
     if (unsub) unsub();
   }
 
-  return { mount, unmount, deleteProduct };
+  function clearCategoryFilter() {
+    activeCategoryFilter = 'all';
+    window.history.replaceState(null, '', '#/products-list');
+    renderTable();
+  }
+
+  return { mount, unmount, deleteProduct, clearCategoryFilter };
 })();
