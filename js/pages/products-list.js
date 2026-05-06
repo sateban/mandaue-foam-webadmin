@@ -226,7 +226,7 @@ window.ProductsList = (() => {
               <div class="td-product-img">${img ? `<img src="${img}" />` : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>'}</div>
               <div>
                 <strong class="text-text">${p.name || 'Unnamed'}</strong>
-                ${p.rating ? `<div class="text-xs text-muted mt-1">⭐ ${Number(p.rating).toFixed(1)} (${p.reviews || 0} reviews)</div>` : ''}
+                ${ true /**p.rating**/ ? `<div class="text-xs text-muted mt-1">⭐ ${isNaN(Number(p.rating)) ? "0.0" : Number(p.rating).toFixed(1)} (${p.reviews || 0} reviews)</div>` : ''}
               </div>
             </div>
           </td>
